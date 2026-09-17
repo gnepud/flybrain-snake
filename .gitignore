@@ -1,0 +1,22 @@
+# Byte-compiled / optimized / cache files
+__pycache__/
+*.py[cod]
+
+# Environments
+.venv/
+venv/
+env/
+
+# Testing caches
+.pytest_cache/
+.coverage
+
+# IDE & OS artifacts
+.DS_Store
+.idea/
+.vscode/
+
+# Agent artifacts & temporary reports
+.agents/
+.claude/
+benchmark_report.json
