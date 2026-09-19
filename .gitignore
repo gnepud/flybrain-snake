@@ -20,4 +20,7 @@ env/
 .agents/
 .claude/
 benchmark_report.json
+# Vercel deployment cache
+.vercel/
+
 *.deb

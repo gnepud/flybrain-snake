@@ -1,0 +1,5 @@
+{
+  "version": 2,
+  "cleanUrls": true,
+  "buildCommand": "python3 -c \"import shutil, os; os.makedirs('public/static', exist_ok=True); shutil.copy('src/web/static/index.html', 'public/index.html'); shutil.copytree('src/web/static', 'public/static', dirs_exist_ok=True)\""
+}
