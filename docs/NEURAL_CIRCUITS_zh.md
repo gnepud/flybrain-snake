@@ -1,7 +1,7 @@
 # FlyBrain Snake 神经回路与多模态气味门控视觉追踪指南
 
 > **系统架构与设计理念 (System Architecture & Framework)**：  
-> **“本项目探索的是一套典型的『连接组在环感觉运动伺服系统（Connectome-in-the-Loop Sensorimotor System）』：**
+> **“本项目探索的是一套典型的『连接组在环感觉运动控制系统（Connectome-in-the-Loop Sensorimotor System）』：**
 > 
 > 1. **全脑动力学层 / 下行意图层 (Whole-Brain Dynamics / Descending Intent Layer)**：由真实的 **MaleCNS v1.0 166.7k** 脉冲全脑模型承担（MaleCNS 数据集包含 1.25 亿突触，运行时稀疏阵约 2,558 万条），执行 4 步 LIF 动力学，作为多模态（嗅觉气味门控 + 视网膜注视追踪）的**非线性生物动力学滤波器**，自发输出下行运动意图（`DNa02` 差模）。每步开始时通过 `brain.v.fill(0)` 复位膜电位，清空跨步运动迟滞，无跨 tick 隐层记忆残留；  
 > 2. **低级反射层 (VNC 功能类比的净空 FSM)**：功能类比昆虫**腹神经索（VNC）与外周反射弧**，以确定性有限状态机（FSM）监控网格局部净空：在正前方遭遇致命碰撞（`dist_front == 0`）时执行毫秒级避碰覆写（Reflex Override），在侧边贴身（`dist_left/right == 0`）时主动抑制撞向障碍侧的转向指令；  

@@ -1,4 +1,4 @@
-# FlyBrain Snake: 连接组在环感觉运动伺服系统
+# FlyBrain Snake: 连接组在环感觉运动控制
 
 [![Connectome](https://img.shields.io/badge/Connectome-MaleCNS%20v1.0-blue.svg)](https://codex.flywire.ai)
 [![Neurons](https://img.shields.io/badge/Neurons-166%2C700%20Spiking%20LIF-green.svg)](https://github.com/alextitonis/flybrain)
@@ -11,9 +11,9 @@
 
 ---
 
-## 🏛️ 系统架构：连接组在环感觉运动伺服系统 (System Architecture)
+## 🏛️ 系统架构：连接组在环感觉运动控制 (System Architecture)
 
-本项目探索并实现了一套典型的**『连接组在环感觉运动伺服系统（Connectome-in-the-Loop Sensorimotor System）』**，在控制层级上对应昆虫经典的感觉运动分工架构（头部回路负责定向 + 胸腹神经索负责近身避碰）。**中央复合体（CX）仪表盘仅作为状态监视与提取，闭环转向动作完全来自 DNa02 下行差模与外周净空 FSM**：
+本项目探索并实现了一套典型的**『连接组在环感觉运动控制系统（Connectome-in-the-Loop Sensorimotor System）』**，在控制层级上对应昆虫经典的感觉运动分工架构（头部回路负责定向 + 胸腹神经索负责近身避碰）。**中央复合体（CX）仪表盘仅作为状态监视与提取，闭环转向动作完全来自 DNa02 下行差模与外周净空 FSM**：
 
 1. **全脑动力学层 / 下行意图层 (Whole-Brain Dynamics / Descending Intent Layer)**：  
    基于 **MaleCNS v1.0** 全脑连接组（16.67 万神经元，运行时稀疏突触阵约 2,558 万条），执行 4 步脉冲泄漏积分发放（LIF）网络动力学。作为多模态（嗅觉敏化门控 + 视网膜注视追踪）的**非线性生物动力学滤波器**，自发输出下行运动意图（`DNa02` 差模）。在每个决策 tick 开始时，通过 `brain.v.fill(0)` 复位全脑膜电位，清空跨 tick 运动迟滞，使每个 4 步 LIF 窗口成为纯粹的准静态前馈动力学滤波过程，无跨周期隐层记忆残留；
