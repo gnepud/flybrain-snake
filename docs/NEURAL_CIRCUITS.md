@@ -113,11 +113,11 @@ $$\text{stim}_{\text{LC10a}, L} = \min(8.0, |\theta_{\text{bearing}}| \times G_{
 $$\text{stim}_{\text{LC10a}, R} = \min(8.0, |\theta_{\text{bearing}}| \times G_{\text{visual}}) \quad (\text{if } \theta_{\text{bearing}} > +\theta_{\text{deadband}})$$
 
 * **Retinal Deadband Refinement**:
-  - **Parameter Tuning**: The straight-line deadband $\theta_{\text{deadband}}$ was refined from $0.15\text{ rad}$ (~$8.6^\circ$) down to $0.05\text{ rad}$ (~$2.86^\circ \approx 3^\circ$).
-  - **Terminal Aiming Precision**: Under the previous $0.15\text{ rad}$ threshold, food items displaced by small offsets ($5^\circ \sim 8^\circ$) fell inside the dead zone and failed to elicit corrective visual turning, occasionally causing the snake to graze past the target. Narrowing the window to $0.05\text{ rad}$ (~$3^\circ$) ensures immediate, acute realignment during straight-line target rushes.
+  - **Parameter Tuning**: The straight-line deadband $\theta_{\text{deadband}}$ was refined from $0.15\text{ rad}$ (approx. $8.6^\circ$) down to $0.05\text{ rad}$ (approx. $2.86^\circ \approx 3^\circ$).
+  - **Terminal Aiming Precision**: Under the previous $0.15\text{ rad}$ threshold, food items displaced by small offsets ($5^\circ \sim 8^\circ$) fell inside the dead zone and failed to elicit corrective visual turning, occasionally causing the snake to graze past the target. Narrowing the window to $0.05\text{ rad}$ (approx. $3^\circ$) ensures immediate, acute realignment during straight-line target rushes.
   - **Micro-Jitter Suppression**: Retaining an acute $\pm 3^\circ$ deadband effectively filters out whole-brain microvolt membrane potential noise, preventing alternating zig-zag wobble.
-* **Far Field ($c_{\max} \to 1.0$)**: Visual gain remains near baseline (~$4.5$), allowing smooth cruise navigation.
-* **Near Field ($c_{\max} \to 10.0$)**: Visual gain surges to ~$14.0$ (a $3\times$ to $4\times$ amplification), driving sharp, resolute orienting saccades directly into the target.
+* **Far Field ($c_{\max} \to 1.0$)**: Visual gain remains near baseline (approx. 4.5), allowing smooth cruise navigation.
+* **Near Field ($c_{\max} \to 10.0$)**: Visual gain surges to approx. 14.0 (a $3\times$ to $4\times$ amplification), driving sharp, resolute orienting saccades directly into the target.
 
 ---
 
@@ -126,8 +126,8 @@ $$\text{stim}_{\text{LC10a}, R} = \min(8.0, |\theta_{\text{bearing}}| \times G_{
 | Cell Class | Source / Type | Count | Anatomical Region | Physiological & Telemetry Role |
 | :--- | :--- | :--- | :--- | :--- |
 | **E-PG Heading Ring** | Algorithmic Reconstruction | 16 wedges | Ellipsoid Body (EB) analogue | **Internal Heading Display**: 16-wedge polar visualization reconstructed from current snake heading angle (not read directly from EPG somas). |
-| **Delta7** (Bridge Interneurons) | `Delta7` | ~16* | Protocerebral Bridge (PB) | **Cross-Columnar Inhibition Reference**: Stabilizes heading representation in biological systems. |
-| **PFL3** (Steering Comparator) | `PFL3` | ~24* | Fan-shaped Body (FB) → Lateral Accessory Lobe (LAL) | **Premotor Balance Monitor**: Evaluates left vs. right Fan-shaped Body potentials for HUD gauge (read-only; non-decisional). |
+| **Delta7** (Bridge Interneurons) | `Delta7` | approx. 16* | Protocerebral Bridge (PB) | **Cross-Columnar Inhibition Reference**: Stabilizes heading representation in biological systems. |
+| **PFL3** (Steering Comparator) | `PFL3` | approx. 24* | Fan-shaped Body (FB) → Lateral Accessory Lobe (LAL) | **Premotor Balance Monitor**: Evaluates left vs. right Fan-shaped Body potentials for HUD gauge (read-only; non-decisional). |
 
 > **Important Note**: Central Complex (CX) instruments are strictly non-decisional read-only telemetry monitors. Closed-loop turning decisions are governed exclusively by descending `DNa02` differentials and the peripheral clearance FSM.
 
@@ -150,7 +150,7 @@ $$\text{stim}_{\text{LC10a}, R} = \min(8.0, |\theta_{\text{bearing}}| \times G_{
 ### V. Neuromodulatory Dynamics & Runtime Architecture
 
 1. **PAM Dopaminergic Ingestion Signatures**:  
-   Ingestion events (`ate_food == True`) trigger transient burst firing in the Mushroom Body protocerebral anterior medial (`PAM`) cluster, visualized over a 35-frame exponential decay window (~600 ms).
+   Ingestion events (`ate_food == True`) trigger transient burst firing in the Mushroom Body protocerebral anterior medial (`PAM`) cluster, visualized over a 35-frame exponential decay window (approx. 600 ms).
 2. **Terminal State Preservation**:  
    Upon death, the simulation automatically pauses and holds the terminal neural collapse visual state indefinitely, preserving the 2D collision position, 3D Giant Fiber arrest HUD, and telemetry until manual reset or resume.
 3. **Dynamic Connectome Indexing**:  

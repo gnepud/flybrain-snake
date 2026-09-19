@@ -78,7 +78,7 @@ The project is structured into a three-layer hierarchical sensorimotor architect
 2. **Encoder-Side Odor-Gated Visual Sensitization**:
    - Encodes sensory sensitization analogous to biological odor-gated visual pursuit:
      $$G_{\text{visual}} = G_{\text{base}} \times \left(1.0 + \alpha \cdot \frac{c_{\max}}{c_0}\right)$$
-   - Smooth exploratory foraging in clean air (~4.5) transitioning to acute high-gain orienting saccades (~14.0) near food.
+   - Smooth exploratory foraging in clean air (approx. 4.5) transitioning to acute high-gain orienting saccades (approx. 14.0) near food.
 3. **Descending Motor Readout**:
    - Steering actions follow the bilateral membrane potential differential of descending command neurons **`DNa02`** (`diff = DNa02_L - DNa02_R > 0.03`), without constant left/right asymmetric bias (zero lateral bias; interface deadband $0.05\text{ rad}$, threshold $0.03$, and gain multipliers remain as explicit interface parameters).
    - Forward crawl baseline is coordinated through `DNa01`.
