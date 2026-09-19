@@ -1,8 +1,8 @@
 /**
- * PFL3 Steering Comparator Canvas Renderer
- * Visualizes the Fan-shaped Body bilateral comparator:
- * PFL3_L vs PFL3_R differential, steer threshold markers (+/- 0.05),
- * and bilateral activation level columns.
+ * CH-04: Fan-Shaped Body PFL3 Steering Comparator
+ * Laboratory Electrophysiology Workstation Renderer
+ * Visualizes the bilateral PFL3 differential steering comparator:
+ * Center-zero differential null galvanometer and dual-channel activation columns.
  */
 
 function renderSteering(canvas, frame) {
@@ -11,8 +11,8 @@ function renderSteering(canvas, frame) {
   const width = canvas.width;
   const height = canvas.height;
 
-  // 1. Background
-  ctx.fillStyle = '#0b0f14';
+  // 1. Dark Substrate Well
+  ctx.fillStyle = '#06090e';
   ctx.fillRect(0, 0, width, height);
 
   const steering = frame.steering || {};
@@ -21,130 +21,153 @@ function renderSteering(canvas, frame) {
   const diff = pfl3_l - pfl3_r;
   const steerThreshold = parseFloat(steering.threshold !== undefined ? steering.threshold : 0.03);
 
-  // 2. Horizontal Differential Comparator Meter (Top Section)
-  const meterX = 40;
-  const meterY = 55;
-  const meterWidth = width - 80;
-  const meterHeight = 26;
+  // 2. Center-Zero Differential Null Galvanometer (Top Section)
+  const meterX = 35;
+  const meterY = 50;
+  const meterWidth = width - 70;
+  const meterHeight = 22;
   const centerX = meterX + meterWidth / 2;
 
-  // Meter background track
-  ctx.fillStyle = '#161e2a';
+  // Meter Track
+  ctx.fillStyle = '#0a1018';
   ctx.fillRect(meterX, meterY, meterWidth, meterHeight);
-  ctx.strokeStyle = '#2b394a';
-  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = '#1c2637';
+  ctx.lineWidth = 1;
   ctx.strokeRect(meterX, meterY, meterWidth, meterHeight);
 
-  // Deadband zone (+/- steerThreshold) in center
-  const deadbandPx = (meterWidth / 2) * (steerThreshold / 0.5);
-  ctx.fillStyle = 'rgba(63, 185, 80, 0.15)';
+  // Deadband Gate Zone ([-steerThreshold, +steerThreshold])
+  const maxDiff = 0.50;
+  const deadbandPx = (meterWidth / 2) * (steerThreshold / maxDiff);
+  ctx.fillStyle = 'rgba(16, 185, 129, 0.10)';
   ctx.fillRect(centerX - deadbandPx, meterY, deadbandPx * 2, meterHeight);
+  ctx.strokeStyle = 'rgba(16, 185, 129, 0.35)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(centerX - deadbandPx, meterY, deadbandPx * 2, meterHeight);
 
-  // Active differential bar deviating from center
-  const maxDiff = 0.5;
+  // Active Differential Bar
   const clampedDiff = Math.max(-maxDiff, Math.min(maxDiff, diff));
   const diffPx = (clampedDiff / maxDiff) * (meterWidth / 2);
 
   if (Math.abs(diff) > steerThreshold) {
-    ctx.fillStyle = diff > 0 ? '#38bdf8' : '#bc8cff';
+    ctx.fillStyle = diff > 0 ? '#0284c7' : '#9333ea';
     if (diff > 0) {
-      // Left turn drive
-      ctx.fillRect(centerX - diffPx, meterY, diffPx, meterHeight);
+      ctx.fillRect(centerX - diffPx, meterY + 2, diffPx, meterHeight - 4);
     } else {
-      // Right turn drive
-      ctx.fillRect(centerX, meterY, -diffPx, meterHeight);
+      ctx.fillRect(centerX, meterY + 2, -diffPx, meterHeight - 4);
     }
   }
 
-  // Center reference line
-  ctx.strokeStyle = '#f0f6fc';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(centerX, meterY - 4);
-  ctx.lineTo(centerX, meterY + meterHeight + 4);
-  ctx.stroke();
+  // Scale Ticks (-0.50, -0.25, 0.00, +0.25, +0.50)
+  const ticks = [-0.5, -0.25, 0, 0.25, 0.5];
+  ticks.forEach(tVal => {
+    const tx = centerX + (tVal / maxDiff) * (meterWidth / 2);
+    ctx.strokeStyle = tVal === 0 ? '#f1f5f9' : '#334155';
+    ctx.lineWidth = tVal === 0 ? 1.5 : 1;
+    ctx.beginPath();
+    ctx.moveTo(tx, meterY);
+    ctx.lineTo(tx, meterY + meterHeight);
+    ctx.stroke();
 
-  // Threshold tick markers
-  ctx.strokeStyle = '#d29922';
-  ctx.lineWidth = 1;
-  ctx.setLineDash([2, 2]);
-  ctx.beginPath();
-  ctx.moveTo(centerX - deadbandPx, meterY);
-  ctx.lineTo(centerX - deadbandPx, meterY + meterHeight);
-  ctx.moveTo(centerX + deadbandPx, meterY);
-  ctx.lineTo(centerX + deadbandPx, meterY + meterHeight);
-  ctx.stroke();
-  ctx.setLineDash([]);
+    ctx.font = '7.5px "JetBrains Mono", monospace';
+    ctx.fillStyle = tVal === 0 ? '#94a3b8' : '#475569';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const label = tVal === 0 ? '0' : (tVal > 0 ? `+${tVal.toFixed(2)}` : tVal.toFixed(2));
+    ctx.fillText(label, tx, meterY + meterHeight + 3);
+  });
 
-  // Labels for meter
-  ctx.font = '10px monospace';
-  ctx.fillStyle = '#8b949e';
-  ctx.textAlign = 'center';
-  ctx.fillText('◄ STEER LEFT', meterX + 45, meterY - 12);
-  ctx.fillText('STEER RIGHT ►', meterX + meterWidth - 45, meterY - 12);
-  ctx.fillText(`Δ: ${diff >= 0 ? '+' : ''}${diff.toFixed(3)}  (θ: ±${steerThreshold.toFixed(2)})`, centerX, meterY + meterHeight + 18);
+  // Header Labels for Differential Meter
+  ctx.font = '600 8.5px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#38bdf8';
+  ctx.textAlign = 'left';
+  ctx.fillText('◄ STEER LEFT [CH-L]', meterX, meterY - 14);
 
-  // 3. Bilateral PFL3 Level Columns (Bottom Section)
-  const colWidth = 60;
-  const colMaxHeight = 140;
-  const colY = height - 50;
+  ctx.fillStyle = '#c084fc';
+  ctx.textAlign = 'right';
+  ctx.fillText('[CH-R] STEER RIGHT ►', meterX + meterWidth, meterY - 14);
 
-  const leftColX = centerX - 80 - colWidth / 2;
-  const rightColX = centerX + 80 - colWidth / 2;
-
-  // Background wells
-  ctx.fillStyle = '#161e2a';
-  ctx.fillRect(leftColX, colY - colMaxHeight, colWidth, colMaxHeight);
-  ctx.fillRect(rightColX, colY - colMaxHeight, colWidth, colMaxHeight);
-  ctx.strokeStyle = '#2b394a';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(leftColX, colY - colMaxHeight, colWidth, colMaxHeight);
-  ctx.strokeRect(rightColX, colY - colMaxHeight, colWidth, colMaxHeight);
-
-  // Fill heights
-  const maxAct = 1.0;
-  const leftH = Math.min(colMaxHeight, (pfl3_l / maxAct) * colMaxHeight);
-  const rightH = Math.min(colMaxHeight, (pfl3_r / maxAct) * colMaxHeight);
-
-  // Left column fill (PFL3_L)
-  const leftGrad = ctx.createLinearGradient(0, colY, 0, colY - leftH);
-  leftGrad.addColorStop(0, '#0284c7');
-  leftGrad.addColorStop(1, '#38bdf8');
-  ctx.fillStyle = leftGrad;
-  ctx.fillRect(leftColX, colY - leftH, colWidth, leftH);
-
-  // Right column fill (PFL3_R)
-  const rightGrad = ctx.createLinearGradient(0, colY, 0, colY - rightH);
-  rightGrad.addColorStop(0, '#7c3aed');
-  rightGrad.addColorStop(1, '#bc8cff');
-  ctx.fillStyle = rightGrad;
-  ctx.fillRect(rightColX, colY - rightH, colWidth, rightH);
-
-  // Values and titles
-  ctx.font = 'bold 12px monospace';
-  ctx.fillStyle = '#f0f6fc';
-  ctx.textAlign = 'center';
-  ctx.fillText(pfl3_l.toFixed(3), leftColX + colWidth / 2, colY - leftH - 8);
-  ctx.fillText(pfl3_r.toFixed(3), rightColX + colWidth / 2, colY - rightH - 8);
-
-  ctx.font = '11px system-ui, sans-serif';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('PFL3 Left', leftColX + colWidth / 2, colY + 20);
-  ctx.fillText('PFL3 Right', rightColX + colWidth / 2, colY + 20);
+  ctx.textAlign = 'center';
+  ctx.fillText(`Δ NULL: ${diff >= 0 ? '+' : ''}${diff.toFixed(3)} V  |  GATE: ±${steerThreshold.toFixed(2)} V`, centerX, meterY - 14);
 
-  // Decision summary badge in center between columns
-  ctx.font = 'bold 12px system-ui, sans-serif';
-  let decisionText = 'BALANCED';
-  let decisionColor = '#3fb950';
-  if (diff > steerThreshold) {
-    decisionText = 'TURN LEFT';
-    decisionColor = '#38bdf8';
-  } else if (-diff > steerThreshold) {
-    decisionText = 'TURN RIGHT';
-    decisionColor = '#bc8cff';
-  }
-  ctx.fillStyle = decisionColor;
-  ctx.fillText(decisionText, centerX, colY - colMaxHeight / 2);
+  // 3. Bilateral Channel Columns (Bottom Section)
+  const colWidth = 65;
+  const colMaxHeight = 150;
+  const colY = height - 42;
+
+  const leftColX = centerX - 75 - colWidth / 2;
+  const rightColX = centerX + 75 - colWidth / 2;
+
+  const columns = [
+    {
+      name: 'CH-L: PFL3-L',
+      tag: 'LEFT DRIVE',
+      val: pfl3_l,
+      x: leftColX,
+      color: '#0284c7',
+      borderColor: '#38bdf8'
+    },
+    {
+      name: 'CH-R: PFL3-R',
+      tag: 'RIGHT DRIVE',
+      val: pfl3_r,
+      x: rightColX,
+      color: '#9333ea',
+      borderColor: '#c084fc'
+    }
+  ];
+
+  columns.forEach(col => {
+    // Column track
+    ctx.fillStyle = '#0a1018';
+    ctx.fillRect(col.x, colY - colMaxHeight, colWidth, colMaxHeight);
+    ctx.strokeStyle = '#1c2637';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(col.x, colY - colMaxHeight, colWidth, colMaxHeight);
+
+    // Horizontal grid ticks (0.2, 0.4, 0.6, 0.8)
+    for (let step = 0.2; step < 1.0; step += 0.2) {
+      const ty = colY - step * colMaxHeight;
+      ctx.strokeStyle = '#16202e';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(col.x, ty);
+      ctx.lineTo(col.x + colWidth, ty);
+      ctx.stroke();
+    }
+
+    // Active fill
+    const fillH = Math.min(colMaxHeight, Math.max(0, (col.val / 1.0) * colMaxHeight));
+    ctx.fillStyle = col.color;
+    ctx.fillRect(col.x + 2, colY - fillH, colWidth - 4, fillH);
+
+    // Level top bar
+    if (fillH > 2) {
+      ctx.strokeStyle = col.borderColor;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(col.x + 2, colY - fillH);
+      ctx.lineTo(col.x + colWidth - 2, colY - fillH);
+      ctx.stroke();
+    }
+
+    // Numerical readout above bar
+    ctx.font = '600 10px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#f1f5f9';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`${col.val.toFixed(3)} V`, col.x + colWidth / 2, colY - fillH - 4);
+
+    // Labels below column
+    ctx.font = '600 9px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#94a3b8';
+    ctx.textBaseline = 'top';
+    ctx.fillText(col.name, col.x + colWidth / 2, colY + 6);
+
+    ctx.font = '8px "Inter", sans-serif';
+    ctx.fillStyle = '#475569';
+    ctx.fillText(col.tag, col.x + colWidth / 2, colY + 18);
+  });
 }
 
 window.renderSteering = renderSteering;

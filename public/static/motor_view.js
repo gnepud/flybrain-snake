@@ -1,8 +1,8 @@
 /**
- * Descending Motor Drive Canvas Renderer
- * Visualizes descending premotor activations:
- * DNa02_L (left turn), DNa02_R (right turn), and DNa01 (forward propulsion),
- * along with the decoded discrete RelativeAction maneuver.
+ * CH-05: Descending Premotor Drive Bus
+ * Laboratory Electrophysiology Workstation Renderer
+ * Calibrated 3-channel descending motor bus (DNa02_L, DNa01, DNa02_R),
+ * discrete decoded action register, and VNC clearance reflex interlock indicator.
  */
 
 function renderMotor(canvas, frame) {
@@ -11,8 +11,8 @@ function renderMotor(canvas, frame) {
   const width = canvas.width;
   const height = canvas.height;
 
-  // 1. Background
-  ctx.fillStyle = '#0b0f14';
+  // 1. Dark Substrate Well
+  ctx.fillStyle = '#06090e';
   ctx.fillRect(0, 0, width, height);
 
   const motor = frame.motor || {};
@@ -21,133 +21,131 @@ function renderMotor(canvas, frame) {
   const dna01 = parseFloat(motor.dna01 !== undefined ? motor.dna01 : (motor.dnp || 0));
   const actionName = frame.action || 'STRAIGHT';
 
-  // 2. Three Vertical Meters for DNa02_L, DNa01, DNa02_R
-  const meterWidth = 46;
+  // 2. Three Vertical Channels
+  const meterWidth = 50;
   const meterMaxHeight = 150;
-  const baseY = height - 100;
-  const spacing = 75;
+  const baseY = height - 90;
+  const spacing = 80;
   const centerX = width / 2;
 
   const meters = [
     {
-      name: 'DNa02_L',
-      sub: 'Left Steer',
+      channel: 'CH-1',
+      name: 'DNa02-L',
+      sub: 'STEER L',
       val: dna_l,
       x: centerX - spacing,
-      color1: '#0284c7',
-      color2: '#38bdf8'
+      color: '#0284c7',
+      borderColor: '#38bdf8'
     },
     {
+      channel: 'CH-2',
       name: 'DNa01',
-      sub: 'Forward',
+      sub: 'PROPEL',
       val: dna01,
       x: centerX,
-      color1: '#15803d',
-      color2: '#4ade80'
+      color: '#10b981',
+      borderColor: '#34d399'
     },
     {
-      name: 'DNa02_R',
-      sub: 'Right Steer',
+      channel: 'CH-3',
+      name: 'DNa02-R',
+      sub: 'STEER R',
       val: dna_r,
       x: centerX + spacing,
-      color1: '#7c3aed',
-      color2: '#bc8cff'
+      color: '#9333ea',
+      borderColor: '#c084fc'
     }
   ];
 
-  meters.forEach(m => {
-    // Meter track background
-    ctx.fillStyle = '#161e2a';
-    ctx.fillRect(m.x - meterWidth / 2, baseY - meterMaxHeight, meterWidth, meterMaxHeight);
-    ctx.strokeStyle = '#2b394a';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(m.x - meterWidth / 2, baseY - meterMaxHeight, meterWidth, meterMaxHeight);
+  // Draw Horizontal Scale Reference Lines Across All Channels
+  const scaleLevels = [0.25, 0.50, 0.75, 1.00];
+  scaleLevels.forEach(lvl => {
+    const ly = baseY - lvl * meterMaxHeight;
+    ctx.strokeStyle = '#121a26';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(centerX - spacing - meterWidth, ly);
+    ctx.lineTo(centerX + spacing + meterWidth, ly);
+    ctx.stroke();
 
-    // Active fill
-    const fillH = Math.min(meterMaxHeight, Math.max(0, (m.val / 1.0) * meterMaxHeight));
-    const grad = ctx.createLinearGradient(0, baseY, 0, baseY - fillH);
-    grad.addColorStop(0, m.color1);
-    grad.addColorStop(1, m.color2);
-    ctx.fillStyle = grad;
-    ctx.fillRect(m.x - meterWidth / 2, baseY - fillH, meterWidth, fillH);
-
-    // Numeric readout
-    ctx.font = 'bold 11px monospace';
-    ctx.fillStyle = '#f0f6fc';
-    ctx.textAlign = 'center';
-    ctx.fillText(m.val.toFixed(3), m.x, baseY - fillH - 8);
-
-    // Labels
-    ctx.font = 'bold 11px system-ui, sans-serif';
-    ctx.fillStyle = '#f0f6fc';
-    ctx.fillText(m.name, m.x, baseY + 18);
-
-    ctx.font = '10px system-ui, sans-serif';
-    ctx.fillStyle = '#8b949e';
-    ctx.fillText(m.sub, m.x, baseY + 32);
+    ctx.font = '7px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#334155';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`${lvl.toFixed(2)}V`, centerX - spacing - meterWidth / 2 - 4, ly);
   });
 
-  // 3. Decoded Motor Action Badge (Bottom Card)
-  const isOverride = Boolean(motor.is_override || (frame.steering && frame.steering.is_override));
-  const badgeY = height - 38;
-  const badgeW = 200;
-  const badgeH = 30;
-  const badgeX = centerX - badgeW / 2;
+  meters.forEach(m => {
+    // Channel Track Well
+    ctx.fillStyle = '#0a1018';
+    ctx.fillRect(m.x - meterWidth / 2, baseY - meterMaxHeight, meterWidth, meterMaxHeight);
+    ctx.strokeStyle = '#1c2637';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(m.x - meterWidth / 2, baseY - meterMaxHeight, meterWidth, meterMaxHeight);
 
-  let badgeBg = 'rgba(63, 185, 80, 0.2)';
-  let badgeBorder = '#3fb950';
-  let badgeText = '▲ STRAIGHT';
+    // Active Fill Bar
+    const fillH = Math.min(meterMaxHeight, Math.max(0, (m.val / 1.0) * meterMaxHeight));
+    ctx.fillStyle = m.color;
+    ctx.fillRect(m.x - meterWidth / 2 + 2, baseY - fillH, meterWidth - 4, fillH);
 
-  if (actionName === 'TURN_LEFT') {
-    badgeBg = 'rgba(56, 189, 248, 0.2)';
-    badgeBorder = '#38bdf8';
-    badgeText = '◄ TURN LEFT';
-  } else if (actionName === 'TURN_RIGHT') {
-    badgeBg = 'rgba(188, 140, 255, 0.2)';
-    badgeBorder = '#bc8cff';
-    badgeText = 'TURN RIGHT ►';
-  }
+    // Peak Level Line
+    if (fillH > 2) {
+      ctx.strokeStyle = m.borderColor;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(m.x - meterWidth / 2 + 2, baseY - fillH);
+      ctx.lineTo(m.x + meterWidth / 2 - 2, baseY - fillH);
+      ctx.stroke();
+    }
 
-  if (isOverride) {
-    badgeBorder = '#f59e0b';
-    badgeBg = 'rgba(245, 158, 11, 0.25)';
-
-    // Reflex Override alert pill above action badge
-    ctx.save();
-    ctx.font = 'bold 10px system-ui, sans-serif';
-    ctx.fillStyle = '#fbbf24';
+    // Digital Readout above meter
+    ctx.font = '600 10px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#f1f5f9';
     ctx.textAlign = 'center';
-    ctx.shadowColor = '#f59e0b';
-    ctx.shadowBlur = 6;
-    ctx.fillText('⚡ REFLEX OVERRIDE (SPINAL COLLISION GUARD)', centerX, badgeY - 7);
-    ctx.restore();
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(`${m.val.toFixed(3)} V`, m.x, baseY - fillH - 4);
+
+    // Channel Labels below meter
+    ctx.font = '600 8.5px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#94a3b8';
+    ctx.textBaseline = 'top';
+    ctx.fillText(m.name, m.x, baseY + 6);
+
+    ctx.font = '7.5px "Inter", sans-serif';
+    ctx.fillStyle = '#475569';
+    ctx.fillText(`${m.channel} // ${m.sub}`, m.x, baseY + 18);
+  });
+
+  // 3. Decoded Action Register & Interlock Status (Bottom Card)
+  const isOverride = Boolean(motor.is_override || (frame.steering && frame.steering.is_override));
+  const barY = height - 44;
+  const barW = width - 40;
+  const barH = 28;
+  const barX = (width - barW) / 2;
+
+  ctx.fillStyle = '#0a1018';
+  ctx.fillRect(barX, barY, barW, barH);
+  ctx.strokeStyle = isOverride ? '#b45309' : '#1c2637';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(barX, barY, barW, barH);
+
+  // Left: Decoded Maneuver
+  ctx.font = '600 9px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#f1f5f9';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`REGISTER: ${actionName}`, barX + 12, barY + barH / 2);
+
+  // Right: VNC Clearance Reflex Interlock Indicator
+  ctx.textAlign = 'right';
+  if (isOverride) {
+    ctx.fillStyle = '#f59e0b';
+    ctx.fillText('⚡ VNC REFLEX INTERLOCK: ENGAGED', barX + barW - 12, barY + barH / 2);
+  } else {
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('VNC INTERLOCK: NOMINAL', barX + barW - 12, barY + barH / 2);
   }
-
-  ctx.fillStyle = badgeBg;
-  roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 6);
-  ctx.fill();
-  ctx.strokeStyle = badgeBorder;
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
-  ctx.font = 'bold 13px system-ui, sans-serif';
-  ctx.fillStyle = badgeBorder;
-  ctx.textAlign = 'center';
-  ctx.fillText(badgeText, centerX, badgeY + 20);
-}
-
-function roundRect(ctx, x, y, width, height, radius) {
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
 }
 
 window.renderMotor = renderMotor;

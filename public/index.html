@@ -4,83 +4,97 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FlyBrain Snake — Drosophila Connectome Neural Navigator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+  <!-- Laboratory Rig Masthead & Session Telemetry -->
   <header class="app-header">
     <div class="header-brand">
+      <div class="rig-badge">RIG-CNS-01 // EXP-2026</div>
       <div class="header-title-group">
-        <h1 class="header-title">FlyBrain Snake</h1>
-        <p class="header-subtitle">Connectome-in-the-Loop Sensorimotor System • MaleCNS 166.7k Multimodal Gating</p>
+        <h1 class="header-title">Drosophila Whole-CNS Neural Navigator</h1>
+        <p class="header-subtitle">Connectome-in-the-Loop Sensorimotor System • MaleCNS v1.0 (166,781 Somas)</p>
       </div>
     </div>
     <div class="header-metrics">
       <div class="metric-card">
-        <span class="metric-label">Status</span>
-        <span id="statusBadge" class="badge badge-running">RUNNING</span>
+        <span class="metric-label">RIG STATUS</span>
+        <div class="status-indicator">
+          <span class="status-dot"></span>
+          <span id="statusBadge" class="badge badge-running">RUNNING</span>
+        </div>
       </div>
       <div class="metric-card">
-        <span class="metric-label">Score</span>
+        <span class="metric-label">REWARD / FOOD</span>
         <span id="scoreValue" class="metric-number">0</span>
       </div>
       <div class="metric-card">
-        <span class="metric-label">Step</span>
+        <span class="metric-label">CYCLE STEP</span>
         <span id="stepValue" class="metric-number">0</span>
       </div>
       <div class="metric-card">
-        <span class="metric-label">Elapsed</span>
+        <span class="metric-label">ELAPSED T</span>
         <span id="timeValue" class="metric-number">00:00</span>
       </div>
     </div>
   </header>
 
+  <!-- Instrument Control Deck -->
   <nav class="control-bar">
     <div class="btn-group">
-      <button id="playBtn" class="btn btn-primary" title="Resume autonomous simulation">▶ Play</button>
-      <button id="pauseBtn" class="btn btn-secondary" title="Pause simulation">⏸ Pause</button>
-      <button id="stepBtn" class="btn btn-secondary" title="Advance single step">⏯ Step</button>
-      <button id="resetBtn" class="btn btn-danger" title="Reset game and neural circuit">↺ Reset</button>
-      <button id="odorToggleBtn" class="btn btn-secondary btn-odor" title="Toggle food odor plume and bilateral antennal sensing (Press O)">♨ Odor Plume: OFF</button>
+      <button id="playBtn" class="btn btn-primary" title="Resume autonomous simulation (Space)">RUN</button>
+      <button id="pauseBtn" class="btn btn-secondary" title="Halt simulation (Space)">HALT</button>
+      <button id="stepBtn" class="btn btn-secondary" title="Advance single 100ms cycle (S)">STEP</button>
+      <button id="resetBtn" class="btn btn-danger" title="Zero registers and reset neural circuit (R)">ZERO / RESET</button>
+      <button id="odorToggleBtn" class="btn btn-secondary btn-odor" title="Toggle chemical odor stimulation field (O)">ODOR STIM: OFF</button>
     </div>
     <div class="speed-control">
-      <label for="speedSlider" class="speed-label">Simulation Rate:</label>
+      <span class="speed-label">ACQ FREQ:</span>
       <input type="range" id="speedSlider" min="1" max="60" value="10" step="1">
-      <span class="speed-value"><span id="speedValue">10</span> steps/s</span>
+      <span class="speed-value"><span id="speedValue">10</span> Hz</span>
+    </div>
+    <div class="key-legend">
+      <span>SHORTCUTS: [SPACE] RUN/HALT • [S] STEP • [R] ZERO • [O] STIM</span>
     </div>
   </nav>
 
+  <!-- Main Rackmount Instrument Modules -->
   <main class="grid-container">
-    <!-- Panel 1: Snake Game Arena -->
+    <!-- Channel 1: 2D Behavioral Arena -->
     <section class="card">
       <div class="card-header card-header-row">
         <div class="card-title-group">
-          <h2 class="card-title">Autonomous Snake Arena</h2>
-          <span class="card-tag">16×16 Closed-Loop Environment</span>
+          <div class="card-channel">CH-01 // BEHAVIORAL ARENA</div>
+          <h2 class="card-title">Closed-Loop 2D Grid (16×16)</h2>
         </div>
-        <button id="arenaOdorBtn" class="btn-xs" title="Toggle food odor plume field">♨ Odor: OFF</button>
+        <button id="arenaOdorBtn" class="btn-xs" title="Toggle food odor plume field">STIM: OFF</button>
       </div>
       <div class="canvas-wrapper">
         <canvas id="snakeCanvas" width="400" height="400"></canvas>
       </div>
       <div class="card-footer" id="snakeStatusText">
-        Snake navigating toward food using connectome motor decisions.
+        HEAD: (08, 08) | FOOD: (08, 04) | RAY_F: 03 RAY_L: 05 RAY_R: 02
       </div>
     </section>
 
-    <!-- Panel 2: 3D Full Male Drosophila CNS Connectome (Brain + VNC) -->
+    <!-- Channel 2: 3D Volumetric Connectome (MaleCNS Whole-CNS) -->
     <section class="card card-featured" id="brain3dCard">
       <div class="card-header card-header-row">
         <div class="card-title-group">
-          <h2 class="card-title">Full Drosophila CNS 166k-Neuron 3D Dynamics (Google Connectome 3D)</h2>
-          <span class="card-tag">Brain + Ventral Nerve Cord (VNC) • 166k Neurons • MaleCNS 1.0 Dataset (~25.6M Runtime Connections)</span>
+          <div class="card-channel">CH-02 // VOLUMETRIC OPTICAL MONITOR</div>
+          <h2 class="card-title">Whole-CNS Connectome Volumetric Reconstruction</h2>
+          <span class="card-tag">MaleCNS 1.0 • 166.7k Somas • ~25.6M Functional Connections</span>
         </div>
         <div class="card-tools">
-          <button id="brainViewFull" class="btn-xs active" title="Full Central Nervous System View (Brain + VNC)">Full System</button>
-          <button id="brainViewBrain" class="btn-xs" title="Focus Central Brain">Central Brain</button>
-          <button id="brainViewVNC" class="btn-xs" title="Focus Ventral Nerve Cord">Ventral Nerve Cord</button>
-          <button id="brainViewSide" class="btn-xs" title="Lateral Anatomical View (Brain-Cervical-VNC Tracts)">Lateral View</button>
-          <button id="brainViewDorsal" class="btn-xs" title="Dorsal View">Dorsal View</button>
-          <button id="brainRotateBtn" class="btn-xs" title="Toggle Auto-Rotation">⟳ Auto-Rotate: OFF</button>
+          <button id="brainViewFull" class="btn-xs active" title="Full Central Nervous System View">FULL CNS</button>
+          <button id="brainViewBrain" class="btn-xs" title="Focus Supraesophageal Central Brain">CENTRAL BRAIN</button>
+          <button id="brainViewVNC" class="btn-xs" title="Focus Ventral Nerve Cord Ganglia">VNC GANGLIA</button>
+          <button id="brainViewSide" class="btn-xs" title="Sagittal Lateral Tracts">SAGITTAL</button>
+          <button id="brainViewDorsal" class="btn-xs" title="Dorsal Horizontal Plane">DORSAL</button>
+          <button id="brainRotateBtn" class="btn-xs" title="Toggle Turntable Rotation">ROTATION: OFF</button>
         </div>
       </div>
       <div class="canvas-wrapper brain3d-wrapper">
@@ -88,68 +102,75 @@
       </div>
       <div class="card-footer brain3d-footer" id="brain3dStatusText">
         <div class="brain3d-footer-status">
-          <span class="status-label">Status:</span>
+          <span class="status-label">CIRCUIT TRACE:</span>
           <span id="brain3dStatusEvent" class="status-value" style="color: #34d399;">Cruising &amp; Foraging (Central Complex)</span>
         </div>
         <div class="brain3d-footer-legend">
           <div class="legend-regions">
-            <span style="color:#a855f7;font-weight:600;">Optic Lobes</span> •
-            <span style="color:#22c55e;font-weight:600;">Central Brain</span> •
-            <span style="color:#00d2ff;font-weight:600;">VNC</span> •
-            <span style="color:#38bdf8;font-weight:600;">Cervical Connective</span>
+            <span style="color:#a855f7;">■ OPTIC LOBES</span>
+            <span style="color:#22c55e;">■ CENTRAL BRAIN</span>
+            <span style="color:#00d2ff;">■ VNC GANGLIA</span>
+            <span style="color:#38bdf8;">■ CERVICAL TRACT</span>
           </div>
           <div class="legend-meta" id="brain3dModelMeta">
-            141,781 Somas (MaleCNS 1.0) • Decay: 50ms
+            141,781 SOMAS • EM MaleCNS v1.0 • TAU: 50ms
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Panel 3: E-PG Neural Compass -->
+    <!-- Channel 3: E-PG Neural Compass -->
     <section class="card">
       <div class="card-header">
-        <h2 class="card-title">E-PG Heading Compass Ring</h2>
-        <span class="card-tag">Ellipsoid Body 16-Wedge Ring Attractor</span>
+        <div class="card-channel">CH-03 // HEADING RESOLVER</div>
+        <h2 class="card-title">Ellipsoid Body E-PG Attractor Compass</h2>
+        <span class="card-tag">16-Wedge Radial Glomerular Compass Bump</span>
       </div>
       <div class="canvas-wrapper">
         <canvas id="compassCanvas" width="360" height="360"></canvas>
       </div>
       <div class="card-footer" id="compassStatusText">
-        16-wedge polar bump encoding internal heading orientation.
+        BUMP PEAK: 0.000 | 16 E-PG WEDGES ACTIVE
       </div>
     </section>
 
-    <!-- Panel 4: Steering Comparator -->
+    <!-- Channel 4: Steering Comparator -->
     <section class="card">
       <div class="card-header">
-        <h2 class="card-title">PFL3 Steering Balance</h2>
-        <span class="card-tag">Fan-Shaped Body Bilateral Comparator</span>
+        <div class="card-channel">CH-04 // BILATERAL COMPARATOR</div>
+        <h2 class="card-title">Fan-Shaped Body PFL3 Differential Meter</h2>
+        <span class="card-tag">PFL3_L vs PFL3_R Null-Balance Galvanometer</span>
       </div>
       <div class="canvas-wrapper">
         <canvas id="steeringCanvas" width="360" height="360"></canvas>
       </div>
       <div class="card-footer" id="steeringStatusText">
-        PFL3_L vs PFL3_R differential driving turning decisions.
+        Δ NULL: 0.000 V | CH-L: 0.000 V | CH-R: 0.000 V
       </div>
     </section>
 
-    <!-- Panel 5: Descending Motor Output -->
+    <!-- Channel 5: Descending Motor Output -->
     <section class="card">
       <div class="card-header">
-        <h2 class="card-title">Descending Motor Drive</h2>
-        <span class="card-tag">DNa02 Steering &amp; DNa01 Forward Crawl</span>
+        <div class="card-channel">CH-05 // PREMOTOR OUTPUT BUS</div>
+        <h2 class="card-title">Descending Premotor Drive (DNa02 / DNa01)</h2>
+        <span class="card-tag">Descending Cervical Cord Voltage &amp; Action Register</span>
       </div>
       <div class="canvas-wrapper">
         <canvas id="motorCanvas" width="360" height="360"></canvas>
       </div>
       <div class="card-footer" id="motorStatusText">
-        Bilateral descending premotor activations translated to discrete actions.
+        DNa02_L: 0.000 V | DNa01: 0.000 V | DNa02_R: 0.000 V
       </div>
     </section>
   </main>
 
   <footer class="app-footer">
-    <p>FlyBrain Snake • Connectome-in-the-Loop Sensorimotor System • Supraspinal Biological Dynamics + VNC Reflex Arc</p>
+    <div class="footer-content">
+      <span class="footer-rig">CNS INSTRUMENTATION RIG // CALIBRATION SPEC 2026-09</span>
+      <span class="footer-text">FlyBrain Connectome-in-the-Loop Sensorimotor System • Supraspinal Biological Dynamics + VNC Reflex Arc</span>
+      <span class="footer-build">BUILD: MaleCNS 1.0 (LIF 4-Tick Spiking Kernel)</span>
+    </div>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>

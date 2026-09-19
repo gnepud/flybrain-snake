@@ -435,32 +435,32 @@
       updateStatusBadge('RUNNING');
     }
 
-    // Update Footers
+    // Update Footers (Instrument Monospace Telemetry)
     if (snakeStatusText) {
       let statusStr = frame.done
-        ? `Episode finished: ${frame.reason || 'Collision'}`
-        : `Head at (${frame.head ? frame.head.join(',') : '?'}), Food at (${frame.food ? frame.food.join(',') : '?'})`;
+        ? `CYCLE HALTED: ${frame.reason || 'BOUNDARY COLLISION'}`
+        : `HEAD: (${frame.head ? frame.head.join(',') : '?'}) | TGT: (${frame.food ? frame.food.join(',') : '?'})`;
       if (frame.olfactory) {
-        const trend = frame.olfactory.delta_c > 0 ? '▲ Closer' : (frame.olfactory.delta_c < 0 ? '▼ Further' : '—');
-        const gateStr = frame.olfactory.gating_factor ? ` | Visual Gate: ${frame.olfactory.gating_factor}x` : '';
-        statusStr += ` | Olfactory AL: L=${frame.olfactory.c_left} R=${frame.olfactory.c_right} (Δ=${frame.olfactory.diff}, ${trend})${gateStr}`;
+        const trend = frame.olfactory.delta_c > 0 ? '+ CLOSER' : (frame.olfactory.delta_c < 0 ? '- FURTHER' : 'FLAT');
+        const gateStr = frame.olfactory.gating_factor ? ` | GATE: ${frame.olfactory.gating_factor}x` : '';
+        statusStr += ` | AL SENSING: L=${frame.olfactory.c_left} R=${frame.olfactory.c_right} (Δ=${frame.olfactory.diff}, ${trend})${gateStr}`;
       }
       snakeStatusText.textContent = statusStr;
     }
 
     if (compassStatusText && frame.epg) {
       const maxAct = Math.max(...frame.epg);
-      compassStatusText.textContent = `Ring bump peak: ${maxAct.toFixed(3)} | 16 E-PG wedges tracking heading.`;
+      compassStatusText.textContent = `BUMP PEAK: ${maxAct.toFixed(3)} | 16 E-PG GLOMERULI RESOLVING HEADING VECTOR`;
     }
 
     if (steeringStatusText && frame.steering) {
       const diff = (frame.steering.pfl3_l || 0) - (frame.steering.pfl3_r || 0);
-      steeringStatusText.textContent = `Differential Δ: ${diff.toFixed(3)} | Left: ${(frame.steering.pfl3_l || 0).toFixed(3)}, Right: ${(frame.steering.pfl3_r || 0).toFixed(3)}`;
+      steeringStatusText.textContent = `Δ NULL: ${diff >= 0 ? '+' : ''}${diff.toFixed(3)} V | CH-L: ${(frame.steering.pfl3_l || 0).toFixed(3)} V | CH-R: ${(frame.steering.pfl3_r || 0).toFixed(3)} V`;
     }
 
     if (motorStatusText && frame.motor) {
       const forwardVal = (frame.motor.dna01 !== undefined ? frame.motor.dna01 : (frame.motor.dnp || 0));
-      motorStatusText.textContent = `DNa02_L: ${(frame.motor.dna02_l || 0).toFixed(3)} | DNa02_R: ${(frame.motor.dna02_r || 0).toFixed(3)} | DNa01: ${forwardVal.toFixed(3)}`;
+      motorStatusText.textContent = `DNa02_L: ${(frame.motor.dna02_l || 0).toFixed(3)} V | DNa01: ${forwardVal.toFixed(3)} V | DNa02_R: ${(frame.motor.dna02_r || 0).toFixed(3)} V`;
     }
 
     // Dispatch to 2D Canvas Renderers (3D Brain rendered via requestAnimationFrame)
@@ -621,10 +621,10 @@
         const isRotating = window.toggleBrain3DAutoRotate();
         if (isRotating) {
           brainRotateBtn.classList.add('active');
-          brainRotateBtn.textContent = '⟳ Auto-Rotate: ON';
+          brainRotateBtn.textContent = 'ROTATION: ACTIVE';
         } else {
           brainRotateBtn.classList.remove('active');
-          brainRotateBtn.textContent = '⟳ Auto-Rotate: OFF';
+          brainRotateBtn.textContent = 'ROTATION: OFF';
         }
       }
     });
@@ -646,11 +646,11 @@
     const isShow = window.showOdorField;
     if (odorToggleBtn) {
       odorToggleBtn.classList.toggle('active', isShow);
-      odorToggleBtn.textContent = isShow ? '♨ Odor Plume: ON' : '♨ Odor Plume: OFF';
+      odorToggleBtn.textContent = isShow ? 'ODOR STIM: ACTIVE' : 'ODOR STIM: OFF';
     }
     if (arenaOdorBtn) {
       arenaOdorBtn.classList.toggle('active', isShow);
-      arenaOdorBtn.textContent = isShow ? '♨ Odor: ON' : '♨ Odor: OFF';
+      arenaOdorBtn.textContent = isShow ? 'STIM: ACTIVE' : 'STIM: OFF';
     }
     if (latestFrame && window.renderSnake && snakeCanvas) {
       window.renderSnake(snakeCanvas, latestFrame);

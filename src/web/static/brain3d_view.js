@@ -909,29 +909,29 @@
     var hud = document.getElementById('brain3dStatusText');
     if (!hud) return;
 
-    var eventText = 'Cruising & Foraging (Resting Connectome)';
+    var eventText = 'Resting Connectome Dynamics (Subthreshold Cruising)';
     var eventColor = '#38bdf8';
 
     if (giantFiberTimer > 0 || currentActiveCircuit === 'giant_fiber') {
-      eventText = '💀 Terminal Neural Collapse (Giant Fiber Arrest)';
+      eventText = '[HALT] Terminal Reflex Arrest (Giant Fiber System)';
       eventColor = '#ef4444';
     } else if (dopamineBurstTimer > 0 || currentActiveCircuit === 'dopamine') {
-      eventText = '✨ Food Capture Reward (PAM Dopamine Burst)';
+      eventText = '[REWARD] PAM Cluster Dopaminergic Burst (MB Ingestion Reward)';
       eventColor = '#fbbf24';
     } else if (currentActiveCircuit === 'turn_left') {
-      eventText = '↰ Left Steering Drive (DNa02_L Descending Column)';
-      eventColor = '#00e5ff';
+      eventText = '[STEER-L] DNa02_L Descending Motor Activation';
+      eventColor = '#38bdf8';
     } else if (currentActiveCircuit === 'turn_right') {
-      eventText = '↱ Right Steering Drive (DNa02_R Descending Column)';
+      eventText = '[STEER-R] DNa02_R Descending Motor Activation';
       eventColor = '#c084fc';
     } else if (currentActiveCircuit === 'visual_pursuit') {
-      eventText = '🎯 Visual Target Pursuit (LC10a Lobula & Optic Lobes)';
+      eventText = '[PURSUIT] Optic Lobes & LC10a Lobula Complex (Visual Lock)';
       eventColor = '#e879f9';
     } else if (currentActiveCircuit === 'odor') {
-      eventText = '♨ Antennal Lobe / SEZ (Food Odor Excitation)';
+      eventText = '[CHEMOSENS] Antennal Lobe Glomeruli (Odor Plume Excitation)';
       eventColor = '#f59e0b';
     } else if (currentActiveCircuit === 'compass') {
-      eventText = '🧭 Central Complex Compass (E-PG Heading Wedge)';
+      eventText = '[HEADING] Central Complex Ellipsoid Body (E-PG Ring Attractor)';
       eventColor = '#34d399';
     }
 
@@ -941,10 +941,10 @@
       statusEl.style.color = eventColor;
     } else {
       hud.innerHTML =
-        '<div class="brain3d-footer-status"><span class="status-label">Status:</span> <span style="color:' + eventColor + ';font-weight:600;">' + eventText + '</span></div>' +
+        '<div class="brain3d-footer-status"><span class="status-label">CIRCUIT TRACE:</span> <span style="color:' + eventColor + ';font-weight:600;">' + eventText + '</span></div>' +
         '<div class="brain3d-footer-legend">' +
-        '<div class="legend-regions"><span style="color:#a855f7;font-weight:600;">Optic Lobes</span> • <span style="color:#22c55e;font-weight:600;">Central Brain</span> • <span style="color:#00d2ff;font-weight:600;">VNC</span> • <span style="color:#38bdf8;font-weight:600;">Cervical Connective</span></div>' +
-        '<div class="legend-meta" id="brain3dModelMeta">' + (isRealCoordinatesLoaded ? '<span style="color:#38bdf8;font-weight:600;">141,781 Somas (MaleCNS 1.0)</span>' : '141,781 Somas') + ' • Decay: 50ms</div>' +
+        '<div class="legend-regions"><span style="color:#a855f7;">■ OPTIC LOBES</span> <span style="color:#22c55e;">■ CENTRAL BRAIN</span> <span style="color:#00d2ff;">■ VNC GANGLIA</span> <span style="color:#38bdf8;">■ CERVICAL TRACT</span></div>' +
+        '<div class="legend-meta" id="brain3dModelMeta">' + (isRealCoordinatesLoaded ? '<span style="color:#38bdf8;font-weight:600;">141,781 SOMAS (MaleCNS 1.0)</span>' : '141,781 SOMAS') + ' • TAU: 50ms</div>' +
         '</div>';
     }
   }
