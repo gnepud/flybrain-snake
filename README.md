@@ -9,6 +9,8 @@
 
 An embodied computational neuroscience exploration project coupling adult *Drosophila melanogaster* whole-brain connectome dynamics ([`flybrain`](https://github.com/alextitonis/flybrain)) with closed-loop sensorimotor navigation, peripheral clearance reflexes, and real-time neuro-telemetry HUD.
 
+https://github.com/user-attachments/assets/e1d8e3b6-5b9b-4044-a71c-d14137c74421
+
 ---
 
 ## 🏛️ System Architecture: Connectome-in-the-Loop Framework

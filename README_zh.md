@@ -9,6 +9,8 @@
 
 一个具身计算神经科学探索项目：基于黑腹果蝇（*Drosophila melanogaster*）全中枢神经系统连接组动力学（[`flybrain`](https://github.com/alextitonis/flybrain)），实现闭环感觉运动寻路、外周净空避障反射与实时 WebGL 神经遥测 HUD。
 
+https://github.com/user-attachments/assets/e1d8e3b6-5b9b-4044-a71c-d14137c74421
+
 ---
 
 ## 🏛️ 系统架构：连接组在环感觉运动控制 (System Architecture)
