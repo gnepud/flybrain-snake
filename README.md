@@ -77,10 +77,10 @@ The project is structured into a three-layer hierarchical sensorimotor architect
    - **Near-field Looming (`LC4`/`LPLC2`)**: Depolarizes optical looming neurons when clearance $\le 1$.
 2. **Encoder-Side Odor-Gated Visual Sensitization**:
    - Encodes sensory sensitization analogous to biological odor-gated visual pursuit:
-     $$\text{visual\_gain} = \text{base\_gain} \times \left(1.0 + \alpha \cdot \frac{c_{\max}}{c_0}\right)$$
+     $$G_{\text{visual}} = G_{\text{base}} \times \left(1.0 + \alpha \cdot \frac{c_{\max}}{c_0}\right)$$
    - Smooth exploratory foraging in clean air (~4.5) transitioning to acute high-gain orienting saccades (~14.0) near food.
 3. **Descending Motor Readout**:
-   - Steering actions follow the bilateral membrane potential differential of descending command neurons **`DNa02`** ($\text{diff} = \text{DNa02\_L} - \text{DNa02\_R} > 0.03$), without constant left/right asymmetric bias (zero lateral bias; interface deadband $0.05\text{ rad}$, threshold $0.03$, and gain multipliers remain as explicit interface parameters).
+   - Steering actions follow the bilateral membrane potential differential of descending command neurons **`DNa02`** (`diff = DNa02_L - DNa02_R > 0.03`), without constant left/right asymmetric bias (zero lateral bias; interface deadband $0.05\text{ rad}$, threshold $0.03$, and gain multipliers remain as explicit interface parameters).
    - Forward crawl baseline is coordinated through `DNa01`.
    - `brain.v.fill(0)` resets potential each tick to prevent inter-step motor drift.
 4. **VNC-Analogous Clearance FSM**:

@@ -71,7 +71,7 @@
 #### 触角叶感觉信号物理彻底解耦
 * **绝对无视网膜角度污染**：触角叶受体严格仅接收双侧化学浓度差：
   $$\Delta c = c_L - c_R$$
-  $$\text{stim}_{\text{AL\_L}} = \min(6.0, \max(0, \Delta c) \times 1.5), \quad \text{stim}_{\text{AL\_R}} = \min(6.0, \max(0, -\Delta c) \times 1.5)$$
+  $$\text{stim}_{\text{AL}, L} = \min(6.0, \max(0, \Delta c) \times 1.5), \quad \text{stim}_{\text{AL}, R} = \min(6.0, \max(0, -\Delta c) \times 1.5)$$
 * **纯化学趋化（Tropotaxis）**：双侧浓度差直接通过侧向神经传递，驱动果蝇朝气味较浓的一侧自然偏转，无需介入视觉几何角度。
 
 #### 时序气味遥测与生物学背景（Surge & Cast 的工程选型）
@@ -94,17 +94,17 @@
 #### 编码器侧气味敏化门控（Odor-Gated Sensitization）数学原理
 在空间接口编码器侧采用敏化公式，类比真实果蝇大脑中嗅觉激活对视觉追踪通路的动态敏化（即气味门控视觉追踪 Odor-Gated Visual Pursuit）：
 
-$$\text{visual\_gain} = \text{base\_gain} \times \left(1.0 + \alpha \cdot \frac{c_{\max}}{c_0}\right)$$
+$$G_{\text{visual}} = G_{\text{base}} \times \left(1.0 + \alpha \cdot \frac{c_{\max}}{c_0}\right)$$
 
 其中：
-- $\text{base\_gain} = 3.5$：无气味或洁净空气中的基础视觉追踪增益。
+- $G_{\text{base}} = 3.5$：无气味或洁净空气中的基础视觉追踪增益。
 - $c_{\max} = \max(c_L, c_R)$：触角感受到的峰值气味浓度（按距离反比衰减模型 $c = \frac{10}{1 + 0.3 d}$）。
 - $c_0 = 5.0$：特征浓度归一化参考标尺。
 - $\alpha = 1.5$：敏化门控放大因子。
 
 对 LC10a 视小叶投射神经元的电刺激仅取决于几何视网膜偏航角 $\theta_{\text{bearing}}$ 与直行死区门限：
-$$\text{stim}_{\text{LC10a\_L}} = \min(8.0, |\theta_{\text{bearing}}| \times \text{visual\_gain}) \quad (\text{当 } \theta_{\text{bearing}} < -\theta_{\text{deadband}})$$
-$$\text{stim}_{\text{LC10a\_R}} = \min(8.0, |\theta_{\text{bearing}}| \times \text{visual\_gain}) \quad (\text{当 } \theta_{\text{bearing}} > +\theta_{\text{deadband}})$$
+$$\text{stim}_{\text{LC10a}, L} = \min(8.0, |\theta_{\text{bearing}}| \times G_{\text{visual}}) \quad (\text{当 } \theta_{\text{bearing}} < -\theta_{\text{deadband}})$$
+$$\text{stim}_{\text{LC10a}, R} = \min(8.0, |\theta_{\text{bearing}}| \times G_{\text{visual}}) \quad (\text{当 } \theta_{\text{bearing}} > +\theta_{\text{deadband}})$$
 
 * **直行死区阈值细化（Deadband Refinement）**：
   - **参数调整**：将直行死区 $\theta_{\text{deadband}}$ 从原先粗糙的 $0.15\text{ rad}$（约 $8.6^\circ$）精细化调校为 $0.05\text{ rad}$（约 $2.86^\circ \approx 3^\circ$）。
@@ -131,7 +131,7 @@ $$\text{stim}_{\text{LC10a\_R}} = \min(8.0, |\theta_{\text{bearing}}| \times \te
 
 | 神经元类别 | 数量 | 解剖通路 | 对应的行为与控制功能 |
 | :--- | :--- | :--- | :--- |
-| **DNa02_L / DNa02_R** | 全脑各 1 个（共 1 对） | 前脑前运动区 → 颈结索 → 腹神经索 (VNC) | **同侧转向驱动**：<br>$\text{DNa02\_L} = \frac{V_L}{2.0}, \quad \text{DNa02\_R} = \frac{V_R}{2.0}$<br>$\text{diff} = \text{DNa02\_L} - \text{DNa02\_R}$<br>$\text{diff} > 0.03 \to \text{TURN\_LEFT}$；$-\text{diff} > 0.03 \to \text{TURN\_RIGHT}$（直接解码差模，无左右常值偏置；保留 0.05 rad 死区与 0.03 阈值）。 |
+| **DNa02_L / DNa02_R** | 全脑各 1 个（共 1 对） | 前脑前运动区 → 颈结索 → 腹神经索 (VNC) | **同侧转向驱动**：<br>`DNa02_L = V_L / 2.0`, `DNa02_R = V_R / 2.0`<br>`diff = DNa02_L - DNa02_R`<br>`diff > 0.03` → `TURN_LEFT`；`-diff > 0.03` → `TURN_RIGHT`（直接解码差模，无左右常值偏置；保留 0.05 rad 死区与 0.03 阈值）。 |
 | **DNa01_L / DNa01_R** | 全脑 1 对 | 前脑下行 → 腹神经索推进回路 | **走步巡航推进**：双侧平均电位驱动基础前进动力（STRAIGHT）。 |
 | **DNp01** (巨纤维 Giant Fiber) | 全脑 1 对粗大轴突 | 侧原脑背侧 → 直达胸腹神经节 | **终局阻滞与可视化**：发生碰撞死亡时在 3D WebGL 呈现红色阻滞烟花与终局冻结状态，直至手动重启（不参与避碰决策）。 |
 

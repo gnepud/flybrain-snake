@@ -77,7 +77,7 @@
 #### Physical Signal Decoupling for Antennal Lobe
 * **Zero Spatial Bearing Contamination**: Antennal Lobe receptors respond exclusively to local chemical concentrations:
   $$\Delta c = c_L - c_R$$
-  $$\text{stim}_{\text{AL\_L}} = \min(6.0, \max(0, \Delta c) \times 1.5), \quad \text{stim}_{\text{AL\_R}} = \min(6.0, \max(0, -\Delta c) \times 1.5)$$
+  $$\text{stim}_{\text{AL}, L} = \min(6.0, \max(0, \Delta c) \times 1.5), \quad \text{stim}_{\text{AL}, R} = \min(6.0, \max(0, -\Delta c) \times 1.5)$$
 * **Chemotactic Tropotaxis**: Bilateral concentration contrast drives lateralized chemotropism directly through premotor pathways without relying on visual coordinates.
 
 #### Temporal Odor Telemetry & Biological Background (Design Rationale for Surge & Cast)
@@ -100,17 +100,17 @@
 #### Encoder-Side Odor-Gated Visual Sensitization
 An encoder-side sensitization formula is applied at the sensory interface, analogous to biological neuromodulatory sensitization where appetitive odors gate visual tracking circuits:
 
-$$\text{visual\_gain} = \text{base\_gain} \times \left(1.0 + \alpha \cdot \frac{c_{\max}}{c_0}\right)$$
+$$G_{\text{visual}} = G_{\text{base}} \times \left(1.0 + \alpha \cdot \frac{c_{\max}}{c_0}\right)$$
 
 where:
-- $\text{base\_gain} = 3.5$: Baseline visual tracking sensitivity in clean air.
+- $G_{\text{base}} = 3.5$: Baseline visual tracking sensitivity in clean air.
 - $c_{\max} = \max(c_L, c_R)$: Peak odor concentration at the antennae ($c = \frac{10}{1 + 0.3 d}$).
 - $c_0 = 5.0$: Characteristic concentration normalization factor.
 - $\alpha = 1.5$: Sensitization scaling coefficient.
 
 The visual stimulation to LC10a is governed strictly by the target's retinal yaw angle and forward deadband threshold:
-$$\text{stim}_{\text{LC10a\_L}} = \min(8.0, |\theta_{\text{bearing}}| \times \text{visual\_gain}) \quad (\text{if } \theta_{\text{bearing}} < -\theta_{\text{deadband}})$$
-$$\text{stim}_{\text{LC10a\_R}} = \min(8.0, |\theta_{\text{bearing}}| \times \text{visual\_gain}) \quad (\text{if } \theta_{\text{bearing}} > +\theta_{\text{deadband}})$$
+$$\text{stim}_{\text{LC10a}, L} = \min(8.0, |\theta_{\text{bearing}}| \times G_{\text{visual}}) \quad (\text{if } \theta_{\text{bearing}} < -\theta_{\text{deadband}})$$
+$$\text{stim}_{\text{LC10a}, R} = \min(8.0, |\theta_{\text{bearing}}| \times G_{\text{visual}}) \quad (\text{if } \theta_{\text{bearing}} > +\theta_{\text{deadband}})$$
 
 * **Retinal Deadband Refinement**:
   - **Parameter Tuning**: The straight-line deadband $\theta_{\text{deadband}}$ was refined from $0.15\text{ rad}$ (~$8.6^\circ$) down to $0.05\text{ rad}$ (~$2.86^\circ \approx 3^\circ$).
@@ -137,7 +137,7 @@ $$\text{stim}_{\text{LC10a\_R}} = \min(8.0, |\theta_{\text{bearing}}| \times \te
 
 | Cell Class | Bilateral Count | Connective Pathway | Physiological & Behavioral Role |
 | :--- | :--- | :--- | :--- |
-| **DNa02_L / DNa02_R** | 1 pair (1 left, 1 right) | Anterior Protocerebrum → Cervical Connective → VNC | **Ipsilateral Steering Drive**:<br>$\text{DNa02\_L} = \frac{V_L}{2.0}, \quad \text{DNa02\_R} = \frac{V_R}{2.0}$<br>$\text{diff} = \text{DNa02\_L} - \text{DNa02\_R}$<br>$\text{diff} > 0.03 \to \text{TURN\_LEFT}$; $-\text{diff} > 0.03 \to \text{TURN\_RIGHT}$ (Differential readout, zero constant lateral bias; retaining calibrated 0.05 rad deadband and 0.03 threshold). |
+| **DNa02_L / DNa02_R** | 1 pair (1 left, 1 right) | Anterior Protocerebrum → Cervical Connective → VNC | **Ipsilateral Steering Drive**:<br>`DNa02_L = V_L / 2.0`, `DNa02_R = V_R / 2.0`<br>`diff = DNa02_L - DNa02_R`<br>`diff > 0.03` → `TURN_LEFT`; `-diff > 0.03` → `TURN_RIGHT` (Differential readout, zero constant lateral bias; retaining calibrated 0.05 rad deadband and 0.03 threshold). |
 | **DNa01_L / DNa01_R** | 1 pair | Anterior Protocerebrum → Thoracic Leg/Crawling Circuits | **Forward Walking Drive**: Bilateral average membrane potential coordinates forward crawling propulsion (STRAIGHT). |
 | **DNp01** (Giant Fiber System) | 1 pair (large-caliber axons) | Dorsal Protocerebrum → Tergotrochanteral & Flight Circuits | **Terminal Shockwave & Visualization**: Displays red arrest firework in WebGL and maintains terminal state upon fatal collision until manual reset (does not drive obstacle avoidance decisions). |
 
