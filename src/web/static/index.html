@@ -11,7 +11,7 @@
     <div class="header-brand">
       <div class="header-title-group">
         <h1 class="header-title">FlyBrain Snake</h1>
-        <p class="header-subtitle">Drosophila Central Complex Connectome Sensorimotor Circuit</p>
+        <p class="header-subtitle">Connectome-in-the-Loop Sensorimotor System • MaleCNS 166.7k Multimodal Gating</p>
       </div>
     </div>
     <div class="header-metrics">
@@ -40,6 +40,7 @@
       <button id="pauseBtn" class="btn btn-secondary" title="Pause simulation">⏸ Pause</button>
       <button id="stepBtn" class="btn btn-secondary" title="Advance single step">⏯ Step</button>
       <button id="resetBtn" class="btn btn-danger" title="Reset game and neural circuit">↺ Reset</button>
+      <button id="odorToggleBtn" class="btn btn-secondary btn-odor" title="Toggle food odor plume and bilateral antennal sensing (Press O)">♨ Odor Plume: OFF</button>
     </div>
     <div class="speed-control">
       <label for="speedSlider" class="speed-label">Simulation Rate:</label>
@@ -51,9 +52,12 @@
   <main class="grid-container">
     <!-- Panel 1: Snake Game Arena -->
     <section class="card">
-      <div class="card-header">
-        <h2 class="card-title">Autonomous Snake Arena</h2>
-        <span class="card-tag">16×16 Closed-Loop Environment</span>
+      <div class="card-header card-header-row">
+        <div class="card-title-group">
+          <h2 class="card-title">Autonomous Snake Arena</h2>
+          <span class="card-tag">16×16 Closed-Loop Environment</span>
+        </div>
+        <button id="arenaOdorBtn" class="btn-xs" title="Toggle food odor plume field">♨ Odor: OFF</button>
       </div>
       <div class="canvas-wrapper">
         <canvas id="snakeCanvas" width="400" height="400"></canvas>
@@ -67,23 +71,37 @@
     <section class="card card-featured" id="brain3dCard">
       <div class="card-header card-header-row">
         <div class="card-title-group">
-          <h2 class="card-title">果蝇全中枢神经系统 16.6 万神经元三维动态 (Google Connectome 3D)</h2>
-          <span class="card-tag">Brain + Ventral Nerve Cord (VNC) • 166,000 Neurons &amp; 125M Synapses • Neuroglancer 3D Modeling</span>
+          <h2 class="card-title">Full Drosophila CNS 166k-Neuron 3D Dynamics (Google Connectome 3D)</h2>
+          <span class="card-tag">Brain + Ventral Nerve Cord (VNC) • 166k Neurons • MaleCNS 1.0 Dataset (~25.6M Runtime Connections)</span>
         </div>
         <div class="card-tools">
-          <button id="brainViewFull" class="btn-xs active" title="全神经系统视角 (Brain + VNC)">全系统</button>
-          <button id="brainViewBrain" class="btn-xs" title="聚焦中央脑 (Central Brain)">中央脑</button>
-          <button id="brainViewVNC" class="btn-xs" title="聚焦腹神经索 (Ventral Nerve Cord)">腹神经索</button>
-          <button id="brainViewSide" class="btn-xs" title="侧视解剖视角 (Lateral View: 观察脑-颈-腹神经束)">侧视</button>
-          <button id="brainViewDorsal" class="btn-xs" title="俯视图 (Dorsal View)">俯视</button>
-          <button id="brainRotateBtn" class="btn-xs" title="切换自动慢速旋转">⟳ 自动旋转: 关</button>
+          <button id="brainViewFull" class="btn-xs active" title="Full Central Nervous System View (Brain + VNC)">Full System</button>
+          <button id="brainViewBrain" class="btn-xs" title="Focus Central Brain">Central Brain</button>
+          <button id="brainViewVNC" class="btn-xs" title="Focus Ventral Nerve Cord">Ventral Nerve Cord</button>
+          <button id="brainViewSide" class="btn-xs" title="Lateral Anatomical View (Brain-Cervical-VNC Tracts)">Lateral View</button>
+          <button id="brainViewDorsal" class="btn-xs" title="Dorsal View">Dorsal View</button>
+          <button id="brainRotateBtn" class="btn-xs" title="Toggle Auto-Rotation">⟳ Auto-Rotate: OFF</button>
         </div>
       </div>
       <div class="canvas-wrapper brain3d-wrapper">
         <canvas id="brain3dCanvas" width="820" height="460"></canvas>
       </div>
-      <div class="card-footer" id="brain3dStatusText">
-        Google Research × Janelia Cell 2026 • 中央脑 (绿) • 视叶 (紫) • 腹神经索 VNC (蓝) • 实时动作电位与传感器流转
+      <div class="card-footer brain3d-footer" id="brain3dStatusText">
+        <div class="brain3d-footer-status">
+          <span class="status-label">Status:</span>
+          <span id="brain3dStatusEvent" class="status-value" style="color: #34d399;">Cruising &amp; Foraging (Central Complex)</span>
+        </div>
+        <div class="brain3d-footer-legend">
+          <div class="legend-regions">
+            <span style="color:#a855f7;font-weight:600;">Optic Lobes</span> •
+            <span style="color:#22c55e;font-weight:600;">Central Brain</span> •
+            <span style="color:#00d2ff;font-weight:600;">VNC</span> •
+            <span style="color:#38bdf8;font-weight:600;">Cervical Connective</span>
+          </div>
+          <div class="legend-meta" id="brain3dModelMeta">
+            141,781 Somas (MaleCNS 1.0) • Decay: 50ms
+          </div>
+        </div>
       </div>
     </section>
 
@@ -119,7 +137,7 @@
     <section class="card">
       <div class="card-header">
         <h2 class="card-title">Descending Motor Drive</h2>
-        <span class="card-tag">DNa02 Steering &amp; DNp Locomotion</span>
+        <span class="card-tag">DNa02 Steering &amp; DNa01 Forward Crawl</span>
       </div>
       <div class="canvas-wrapper">
         <canvas id="motorCanvas" width="360" height="360"></canvas>
@@ -131,7 +149,7 @@
   </main>
 
   <footer class="app-footer">
-    <p>FlyBrain Snake • Autonomous Drosophila Sensorimotor Central Complex Simulation • Biological Connectome Architecture</p>
+    <p>FlyBrain Snake • Connectome-in-the-Loop Sensorimotor System • Supraspinal Biological Dynamics + VNC Reflex Arc</p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>

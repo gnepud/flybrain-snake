@@ -215,6 +215,55 @@ class TestWebServer(unittest.TestCase):
             self.assertIn("renderBrain3D", js_body)
             self.assertIn("FlyWire", js_body)
 
+    def test_death_state_preserved_no_auto_reset(self):
+        """Verify simulation pauses upon death and does NOT auto-reset until manual command."""
+        self._require_server()
+        import dataclasses
+        # Simulate death state
+        with self.server_instance.lock:
+            self.server_instance.obs = dataclasses.replace(
+                self.server_instance.obs, done=True, reason="wall_collision"
+            )
+            self.server_instance.paused = False
+
+        # Allow simulation loop to process done condition
+        time.sleep(0.15)
+
+        # Verify simulation paused itself and remained in done state
+        self.assertTrue(self.server_instance.paused)
+        self.assertTrue(self.server_instance.obs.done)
+
+        # Verify /api/status reports done and paused
+        status_url = f"http://127.0.0.1:{self.port}/api/status"
+        with urllib.request.urlopen(status_url, timeout=3.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            self.assertTrue(data.get("done"))
+            self.assertTrue(data.get("paused"))
+
+        # Sending 'play' when dead resets and resumes game
+        control_url = f"http://127.0.0.1:{self.port}/api/control"
+        req = urllib.request.Request(
+            control_url,
+            data=json.dumps({"command": "play"}).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=3.0) as resp:
+            self.assertEqual(resp.status, 200)
+            res = json.loads(resp.read().decode("utf-8"))
+            self.assertEqual(res.get("status"), "ok")
+            self.assertFalse(res.get("paused"))
+            self.assertIn("frame", res)
+            self.assertFalse(res["frame"].get("done"))
+
+        # Verify server state is now alive
+        self.assertFalse(self.server_instance.obs.done)
+        self.assertFalse(self.server_instance.paused)
+
+        # Pause to leave server in clean state
+        with self.server_instance.lock:
+            self.server_instance.paused = True
+
 
 if __name__ == "__main__":
     unittest.main()

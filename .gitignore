@@ -20,3 +20,4 @@ env/
 .agents/
 .claude/
 benchmark_report.json
+*.deb

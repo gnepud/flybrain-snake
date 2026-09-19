@@ -224,6 +224,24 @@ body {
   box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
 }
 
+.btn-odor {
+  background-color: #21262d;
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+.btn-odor:hover {
+  background-color: #30363d;
+  color: #fef08a;
+}
+
+.btn-odor.active {
+  background-color: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
+}
+
 .btn:active {
   transform: scale(0.98);
 }
@@ -337,6 +355,63 @@ canvas {
   color: var(--text-secondary);
   line-height: 1.3;
   font-family: var(--font-mono);
+}
+
+.brain3d-footer {
+  min-height: 2.85rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.brain3d-footer-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+.brain3d-footer-status .status-label {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.brain3d-footer-status .status-value {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.brain3d-footer-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+.brain3d-footer-legend .legend-regions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.brain3d-footer-legend .legend-meta {
+  color: #8b949e;
+}
+
+@media (max-width: 640px) {
+  .brain3d-footer {
+    min-height: 4.1rem;
+  }
 }
 
 /* Featured 3D Brain Card */

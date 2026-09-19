@@ -53,6 +53,22 @@ class SnakeRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
 
+    def _send_file(self, file_path: str, content_type: Optional[str] = None) -> None:
+        """Sends static file with appropriate headers and caching disabled."""
+        if not file_path.startswith(STATIC_DIR) or not os.path.isfile(file_path):
+            self._send_json(404, {"status": "error", "message": "File not found"})
+            return
+        ext = os.path.splitext(file_path)[1].lower()
+        ctype = content_type or MIME_TYPES.get(ext, mimetypes.guess_type(file_path)[0] or "application/octet-stream")
+        with open(file_path, "rb") as f:
+            content = f.read()
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers()
+        self.wfile.write(content)
+
     def do_OPTIONS(self) -> None:
         """Handle CORS pre-flight requests."""
         self.send_response(200)
@@ -63,75 +79,36 @@ class SnakeRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         """Handle GET requests for static pages, SSE stream, and status check."""
-        parsed_url = urlparse(self.path)
-        path = parsed_url.path
+        path = urlparse(self.path).path
 
-        # 1. Root / index.html
         if path in ("/", "/index.html"):
-            index_path = os.path.join(STATIC_DIR, "index.html")
-            if os.path.isfile(index_path):
-                with open(index_path, "rb") as f:
-                    content = f.read()
-                self.send_response(200)
-                self.send_header("Content-Type", "text/html; charset=utf-8")
-                self.send_header("Content-Length", str(len(content)))
-                self.send_header("Access-Control-Allow-Origin", "*")
-                self.end_headers()
-                self.wfile.write(content)
-            else:
-                self._send_json(404, {"status": "error", "message": "index.html not found"})
-            return
-
-        # 2. Health & Status endpoint
-        if path == "/api/status":
+            self._send_file(os.path.join(STATIC_DIR, "index.html"), "text/html; charset=utf-8")
+        elif path == "/api/status":
             with self.server.lock:
                 status_info = {
                     "status": "ok",
                     "running": not self.server.stopped,
                     "paused": self.server.paused,
+                    "done": getattr(self.server.obs, "done", False),
                     "step": self.server.step_count,
                     "score": self.server.score,
                     "fps": self.server.fps,
                     "restrict_borders": getattr(self.server.env, "restrict_borders", False),
                 }
             self._send_json(200, status_info)
-            return
-
-        # 3. Telemetry Stream (Server-Sent Events)
-        if path == "/api/stream":
+        elif path == "/api/stream":
             self._handle_sse_stream()
-            return
-
-        # 4. Step History / Replay endpoint
-        if path == "/api/history":
+        elif path == "/api/history":
             with self.server.lock:
                 history_list = list(self.server.history)
             self._send_json(200, {"status": "ok", "history": history_list})
-            return
-
-        # 5. Static Assets Delivery
-        rel_path = path.removeprefix("/static/").lstrip("/")
-        candidate_path = os.path.normpath(os.path.join(STATIC_DIR, rel_path))
-
-        # Check path traversal
-        if not candidate_path.startswith(STATIC_DIR):
-            self._send_json(403, {"status": "error", "message": "Forbidden"})
-            return
-
-        if os.path.isfile(candidate_path):
-            ext = os.path.splitext(candidate_path)[1].lower()
-            content_type = MIME_TYPES.get(ext, mimetypes.guess_type(candidate_path)[0] or "application/octet-stream")
-            with open(candidate_path, "rb") as f:
-                content = f.read()
-            self.send_response(200)
-            self.send_header("Content-Type", content_type)
-            self.send_header("Content-Length", str(len(content)))
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(content)
-            return
-
-        self._send_json(404, {"status": "error", "message": f"Asset not found: {path}"})
+        else:
+            rel_path = path.removeprefix("/static/").lstrip("/")
+            candidate_path = os.path.normpath(os.path.join(STATIC_DIR, rel_path))
+            if not candidate_path.startswith(STATIC_DIR):
+                self._send_json(403, {"status": "error", "message": "Forbidden"})
+            else:
+                self._send_file(candidate_path)
 
     def _handle_sse_stream(self) -> None:
         """Streams real-time game telemetry and connectome spike activity."""
@@ -215,8 +192,15 @@ class SnakeRequestHandler(BaseHTTPRequestHandler):
         command = command.strip().lower()
 
         if command == "play":
-            self.server.paused = False
-            self._send_json(200, {"status": "ok", "message": "Simulation running", "paused": False})
+            frame = None
+            with self.server.lock:
+                if self.server.obs.done:
+                    frame = self.server.reset_game()
+                self.server.paused = False
+            resp_data: Dict[str, Any] = {"status": "ok", "message": "Simulation running", "paused": False}
+            if frame:
+                resp_data["frame"] = frame
+            self._send_json(200, resp_data)
         elif command == "pause":
             self.server.paused = True
             self._send_json(200, {"status": "ok", "message": "Simulation paused", "paused": True})
@@ -342,6 +326,44 @@ class SnakeServer(ThreadingHTTPServer):
         self.sim_thread = threading.Thread(target=self._simulation_loop, name="SnakeSimLoop", daemon=True)
         self.sim_thread.start()
 
+    def _build_frame(
+        self,
+        obs: SnakeEnv,
+        action: str = "NONE",
+        epg: Optional[List[float]] = None,
+        steering: Optional[Dict[str, float]] = None,
+        motor: Optional[Dict[str, float]] = None,
+        ate_food: bool = False,
+        spikes: Optional[List[int]] = None,
+        spikes_count: int = 0,
+        olfactory: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        return {
+            "step": self.step_count,
+            "score": self.score,
+            "head": [int(x) for x in obs.head],
+            "body": [[int(x), int(y)] for x, y in obs.body],
+            "food": [int(x) for x in obs.food],
+            "direction": int(obs.direction),
+            "done": bool(obs.done),
+            "reason": obs.reason,
+            "epg": epg or [0.0] * 16,
+            "steering": steering or {"pfl3_l": 0.0, "pfl3_r": 0.0, "threshold": 0.03, "is_override": False},
+            "motor": motor or {"dna02_l": 0.0, "dna02_r": 0.0, "dna01": 0.0, "dnp": 0.0, "is_override": False},
+            "action": action,
+            "restrict_borders": bool(getattr(self.env, "restrict_borders", False)),
+            "sensory": {
+                "food_bearing": float(getattr(obs, "food_bearing", 0.0)),
+                "dist_front": int(getattr(obs, "dist_front", 10)),
+                "dist_left": int(getattr(obs, "dist_left", 10)),
+                "dist_right": int(getattr(obs, "dist_right", 10)),
+            },
+            "ate_food": ate_food,
+            "spikes": spikes or [],
+            "spikes_count": spikes_count,
+            "olfactory": olfactory or {"c_left": 0.0, "c_right": 0.0, "diff": 0.0},
+        }
+
     def reset_game(self, seed: Optional[int] = None) -> Dict[str, Any]:
         """Resets the game environment and connectome agent dynamics."""
         with self.lock:
@@ -350,29 +372,7 @@ class SnakeServer(ThreadingHTTPServer):
             self.step_count = int(self.obs.step_count)
             self.score = int(self.obs.score)
 
-            frame = {
-                "step": self.step_count,
-                "score": self.score,
-                "head": [int(x) for x in self.obs.head],
-                "body": [[int(x), int(y)] for x, y in self.obs.body],
-                "food": [int(x) for x in self.obs.food],
-                "direction": int(self.obs.direction),
-                "done": bool(self.obs.done),
-                "reason": self.obs.reason,
-                "epg": [0.0] * 16,
-                "steering": {"pfl3_l": 0.0, "pfl3_r": 0.0},
-                "motor": {"dna02_l": 0.0, "dna02_r": 0.0, "dnp": 0.0},
-                "action": "NONE",
-                "restrict_borders": bool(getattr(self.env, "restrict_borders", False)),
-                "sensory": {
-                    "food_bearing": float(getattr(self.obs, "food_bearing", 0.0)),
-                    "dist_front": int(getattr(self.obs, "dist_front", 10)),
-                    "dist_left": int(getattr(self.obs, "dist_left", 10)),
-                    "dist_right": int(getattr(self.obs, "dist_right", 10)),
-                },
-                "ate_food": False,
-                "spikes": [],
-            }
+            frame = self._build_frame(self.obs)
             self.current_frame = frame
             self.history.append(frame)
             self._broadcast_frame(frame)
@@ -382,7 +382,6 @@ class SnakeServer(ThreadingHTTPServer):
         """Advances the simulation by one discrete step."""
         with self.lock:
             if self.obs.done:
-                self.reset_game()
                 return self.current_frame or {}
 
             action, info = self.agent.act(self.obs)
@@ -393,42 +392,34 @@ class SnakeServer(ThreadingHTTPServer):
 
             action_name = action.name if hasattr(action, "name") else str(action)
             steering = info.get("steering", {})
+            is_override = bool(steering.get("is_override", False))
+            forward_val = float(info.get("dna01", info.get("dnp", 0.0)))
             motor = {
                 "dna02_l": float(info.get("dna02_l", 0.0)),
                 "dna02_r": float(info.get("dna02_r", 0.0)),
-                "dnp": float(info.get("dnp", 0.0)),
+                "dna01": forward_val,
+                "dnp": forward_val,
+                "is_override": is_override,
             }
             epg = [float(x) for x in info.get("epg", [0.0] * 16)]
             spikes = info.get("spikes", [])
-            ate_food = bool(reward > 0)
 
-            frame = {
-                "step": self.step_count,
-                "score": self.score,
-                "head": [int(x) for x in next_obs.head],
-                "body": [[int(x), int(y)] for x, y in next_obs.body],
-                "food": [int(x) for x in next_obs.food],
-                "direction": int(next_obs.direction),
-                "done": bool(next_obs.done),
-                "reason": next_obs.reason,
-                "epg": epg,
-                "steering": {
+            frame = self._build_frame(
+                next_obs,
+                action=action_name,
+                epg=epg,
+                steering={
                     "pfl3_l": float(steering.get("pfl3_l", 0.0)),
                     "pfl3_r": float(steering.get("pfl3_r", 0.0)),
+                    "threshold": float(steering.get("threshold", 0.03)),
+                    "is_override": is_override,
                 },
-                "motor": motor,
-                "action": action_name,
-                "restrict_borders": bool(getattr(self.env, "restrict_borders", False)),
-                "sensory": {
-                    "food_bearing": float(getattr(next_obs, "food_bearing", 0.0)),
-                    "dist_front": int(getattr(next_obs, "dist_front", 10)),
-                    "dist_left": int(getattr(next_obs, "dist_left", 10)),
-                    "dist_right": int(getattr(next_obs, "dist_right", 10)),
-                },
-                "ate_food": ate_food,
-                "spikes": spikes,
-                "spikes_count": info.get("spikes_count", len(spikes)),
-            }
+                motor=motor,
+                ate_food=bool(reward > 0),
+                spikes=spikes,
+                spikes_count=info.get("spikes_count", len(spikes)),
+                olfactory=info.get("olfactory"),
+            )
             self.current_frame = frame
             self.history.append(frame)
             self._broadcast_frame(frame)
@@ -453,11 +444,11 @@ class SnakeServer(ThreadingHTTPServer):
                     time.sleep(0.02)
                 continue
 
-            # Auto-reset on game over after a short delay
+            # Preserve death state: pause on game over and wait for manual reset/play
             if self.obs.done:
-                time.sleep(1.0)
-                if not self.paused and not self._stop_event.is_set():
-                    self.reset_game()
+                with self.lock:
+                    self.paused = True
+                time.sleep(0.02)
                 continue
 
             self.step_simulation()

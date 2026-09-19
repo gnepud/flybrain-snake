@@ -13,8 +13,9 @@ from src.snake_env.kinematics import RelativeAction
 class MotorDecoder:
     """Decodes bilateral descending motor activations into discrete snake maneuvers."""
 
-    def __init__(self, steer_threshold: float = 0.05):
+    def __init__(self, steer_threshold: float = 0.03):
         self.steer_threshold = steer_threshold
+        self.last_override: bool = False
 
     def decode(
         self,
@@ -41,6 +42,7 @@ class MotorDecoder:
         # 1. Reflexive Collision Override:
         # If immediate obstacle in front (dist_front == 0), moving straight would crash.
         if dist_front is not None and dist_front == 0:
+            self.last_override = True
             left_ok = (dist_left is None or dist_left > 0)
             right_ok = (dist_right is None or dist_right > 0)
             if left_ok and not right_ok:
@@ -59,6 +61,7 @@ class MotorDecoder:
                 return RelativeAction.STRAIGHT
 
         # 2. Descending Steering Differential Decoding
+        self.last_override = False
         diff = dna_left - dna_right
         if diff > self.steer_threshold:
             # Lateral clearance guard: suppress left turn if obstacle is immediately adjacent on the left
@@ -82,7 +85,7 @@ def decode_motor(
     dna_left: float,
     dna_right: float,
     forward: float = 0.5,
-    steer_threshold: float = 0.05,
+    steer_threshold: float = 0.03,
     dist_front: Optional[int] = None,
     dist_left: Optional[int] = None,
     dist_right: Optional[int] = None,

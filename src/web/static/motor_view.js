@@ -1,7 +1,7 @@
 /**
  * Descending Motor Drive Canvas Renderer
  * Visualizes descending premotor activations:
- * DNa02_L (left turn), DNa02_R (right turn), and DNp (forward propulsion),
+ * DNa02_L (left turn), DNa02_R (right turn), and DNa01 (forward propulsion),
  * along with the decoded discrete RelativeAction maneuver.
  */
 
@@ -18,10 +18,10 @@ function renderMotor(canvas, frame) {
   const motor = frame.motor || {};
   const dna_l = parseFloat(motor.dna02_l || 0);
   const dna_r = parseFloat(motor.dna02_r || 0);
-  const dnp = parseFloat(motor.dnp || 0);
+  const dna01 = parseFloat(motor.dna01 !== undefined ? motor.dna01 : (motor.dnp || 0));
   const actionName = frame.action || 'STRAIGHT';
 
-  // 2. Three Vertical Meters for DNa02_L, DNp, DNa02_R
+  // 2. Three Vertical Meters for DNa02_L, DNa01, DNa02_R
   const meterWidth = 46;
   const meterMaxHeight = 150;
   const baseY = height - 100;
@@ -38,9 +38,9 @@ function renderMotor(canvas, frame) {
       color2: '#38bdf8'
     },
     {
-      name: 'DNp',
+      name: 'DNa01',
       sub: 'Forward',
-      val: dnp,
+      val: dna01,
       x: centerX,
       color1: '#15803d',
       color2: '#4ade80'
@@ -88,9 +88,10 @@ function renderMotor(canvas, frame) {
   });
 
   // 3. Decoded Motor Action Badge (Bottom Card)
-  const badgeY = height - 42;
+  const isOverride = Boolean(motor.is_override || (frame.steering && frame.steering.is_override));
+  const badgeY = height - 38;
   const badgeW = 200;
-  const badgeH = 32;
+  const badgeH = 30;
   const badgeX = centerX - badgeW / 2;
 
   let badgeBg = 'rgba(63, 185, 80, 0.2)';
@@ -107,6 +108,21 @@ function renderMotor(canvas, frame) {
     badgeText = 'TURN RIGHT ►';
   }
 
+  if (isOverride) {
+    badgeBorder = '#f59e0b';
+    badgeBg = 'rgba(245, 158, 11, 0.25)';
+
+    // Reflex Override alert pill above action badge
+    ctx.save();
+    ctx.font = 'bold 10px system-ui, sans-serif';
+    ctx.fillStyle = '#fbbf24';
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#f59e0b';
+    ctx.shadowBlur = 6;
+    ctx.fillText('⚡ REFLEX OVERRIDE (SPINAL COLLISION GUARD)', centerX, badgeY - 7);
+    ctx.restore();
+  }
+
   ctx.fillStyle = badgeBg;
   roundRect(ctx, badgeX, badgeY, badgeW, badgeH, 6);
   ctx.fill();
@@ -117,7 +133,7 @@ function renderMotor(canvas, frame) {
   ctx.font = 'bold 13px system-ui, sans-serif';
   ctx.fillStyle = badgeBorder;
   ctx.textAlign = 'center';
-  ctx.fillText(badgeText, centerX, badgeY + 21);
+  ctx.fillText(badgeText, centerX, badgeY + 20);
 }
 
 function roundRect(ctx, x, y, width, height, radius) {

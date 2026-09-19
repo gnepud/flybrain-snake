@@ -44,11 +44,6 @@ class BenchmarkEvaluator:
             return FlyBrainAgent(seed=seed)
         elif agent_spec == "random":
             return RandomAgent(seed=seed)
-        elif isinstance(agent_spec, type):
-            try:
-                return agent_spec(seed=seed)
-            except TypeError:
-                return agent_spec()
         elif callable(agent_spec) and not hasattr(agent_spec, "act"):
             try:
                 return agent_spec(seed=seed)
@@ -211,6 +206,7 @@ class BenchmarkEvaluator:
         width: Optional[int] = None,
         height: Optional[int] = None,
         assert_thresholds: bool = True,
+        memory_steps: int = 1000,
     ) -> Dict[str, Any]:
         """Execute paired multi-episode benchmark between ConnectomeAgent and RandomAgent.
         
@@ -262,9 +258,20 @@ class BenchmarkEvaluator:
         total_time = c_res["total_time_seconds"] + r_res["total_time_seconds"]
         overall_speed = total_steps / max(total_time, 1e-6)
 
-        # 5. Memory stability over 1,000 continuous steps
-        mem_metrics = self.measure_memory_stability(steps=1000, warmup=100, width=w, height=h)
-        delta_mem_mb = mem_metrics["delta_mb"]
+        # 5. Memory stability over continuous steps
+        if memory_steps > 0:
+            mem_metrics = self.measure_memory_stability(
+                steps=memory_steps,
+                warmup=min(100, memory_steps // 2),
+                width=w,
+                height=h,
+            )
+            delta_mem_mb = mem_metrics["delta_mb"]
+            memory_ok = delta_mem_mb < 5.0
+        else:
+            mem_metrics = {"start_mb": 0.0, "end_mb": 0.0, "delta_mb": 0.0, "peak_mb": 0.0}
+            delta_mem_mb = 0.0
+            memory_ok = True
 
         # 6. Acceptance criteria verification
         survival_superior = c_res["mean_survival"] > r_res["mean_survival"]

@@ -149,25 +149,14 @@ def main() -> int:
     import glob
     targets = list(args.targets)
 
-    if args.tier:
-        targets.extend(glob.glob(f"tests/e2e/test_tier{args.tier}_*.py"))
-    elif args.unit:
+    if not targets:
         targets.extend(glob.glob("tests/test_*.py"))
-    elif args.e2e:
-        targets.append("tests/e2e")
+    elif args.unit or args.e2e or args.tier:
+        targets.extend(glob.glob("tests/test_*.py"))
 
-    # Determine runner
     if args.unittest:
         return run_with_unittest(targets, verbose=args.verbose)
-    elif args.pytest:
-        return run_with_pytest(targets, verbose=args.verbose)
-    else:
-        # Default: try pytest first, fallback to unittest
-        try:
-            import pytest
-            return run_with_pytest(targets, verbose=args.verbose)
-        except ImportError:
-            return run_with_unittest(targets, verbose=args.verbose)
+    return run_with_pytest(targets, verbose=args.verbose)
 
 
 if __name__ == "__main__":

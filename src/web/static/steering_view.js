@@ -19,7 +19,7 @@ function renderSteering(canvas, frame) {
   const pfl3_l = parseFloat(steering.pfl3_l || 0);
   const pfl3_r = parseFloat(steering.pfl3_r || 0);
   const diff = pfl3_l - pfl3_r;
-  const steerThreshold = 0.05;
+  const steerThreshold = parseFloat(steering.threshold !== undefined ? steering.threshold : 0.03);
 
   // 2. Horizontal Differential Comparator Meter (Top Section)
   const meterX = 40;
@@ -35,7 +35,7 @@ function renderSteering(canvas, frame) {
   ctx.lineWidth = 1.5;
   ctx.strokeRect(meterX, meterY, meterWidth, meterHeight);
 
-  // Deadband zone (+/- 0.05) in center
+  // Deadband zone (+/- steerThreshold) in center
   const deadbandPx = (meterWidth / 2) * (steerThreshold / 0.5);
   ctx.fillStyle = 'rgba(63, 185, 80, 0.15)';
   ctx.fillRect(centerX - deadbandPx, meterY, deadbandPx * 2, meterHeight);
@@ -82,7 +82,7 @@ function renderSteering(canvas, frame) {
   ctx.textAlign = 'center';
   ctx.fillText('◄ STEER LEFT', meterX + 45, meterY - 12);
   ctx.fillText('STEER RIGHT ►', meterX + meterWidth - 45, meterY - 12);
-  ctx.fillText(`Δ: ${diff >= 0 ? '+' : ''}${diff.toFixed(3)}`, centerX, meterY + meterHeight + 18);
+  ctx.fillText(`Δ: ${diff >= 0 ? '+' : ''}${diff.toFixed(3)}  (θ: ±${steerThreshold.toFixed(2)})`, centerX, meterY + meterHeight + 18);
 
   // 3. Bilateral PFL3 Level Columns (Bottom Section)
   const colWidth = 60;

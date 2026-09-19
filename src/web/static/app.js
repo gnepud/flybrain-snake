@@ -93,20 +93,9 @@
 
   function updateStatusBadge(status) {
     if (!statusBadge) return;
-    statusBadge.className = 'badge';
-    if (status === 'RUNNING') {
-      statusBadge.classList.add('badge-running');
-      statusBadge.textContent = 'RUNNING';
-    } else if (status === 'PAUSED') {
-      statusBadge.classList.add('badge-paused');
-      statusBadge.textContent = 'PAUSED';
-    } else if (status === 'GAME OVER') {
-      statusBadge.classList.add('badge-over');
-      statusBadge.textContent = 'GAME OVER';
-    } else {
-      statusBadge.classList.add('badge-action');
-      statusBadge.textContent = status;
-    }
+    const badges = { 'RUNNING': 'badge-running', 'PAUSED': 'badge-paused', 'GAME OVER': 'badge-over' };
+    statusBadge.className = `badge ${badges[status] || 'badge-action'}`;
+    statusBadge.textContent = status;
   }
 
   // Handle Incoming Telemetry Frame
@@ -122,6 +111,7 @@
     }
 
     if (frame.done) {
+      isPaused = true;
       updateStatusBadge('GAME OVER');
     } else if (isPaused) {
       updateStatusBadge('PAUSED');
@@ -131,15 +121,20 @@
 
     // Update Footers
     if (snakeStatusText) {
-      const statusStr = frame.done
+      let statusStr = frame.done
         ? `Episode finished: ${frame.reason || 'Collision'}`
         : `Head at (${frame.head ? frame.head.join(',') : '?'}), Food at (${frame.food ? frame.food.join(',') : '?'})`;
+      if (frame.olfactory) {
+        const trend = frame.olfactory.delta_c > 0 ? '▲ Closer' : (frame.olfactory.delta_c < 0 ? '▼ Further' : '—');
+        const gateStr = frame.olfactory.gating_factor ? ` | Visual Gate: ${frame.olfactory.gating_factor}x` : '';
+        statusStr += ` | Olfactory AL: L=${frame.olfactory.c_left} R=${frame.olfactory.c_right} (Δ=${frame.olfactory.diff}, ${trend})${gateStr}`;
+      }
       snakeStatusText.textContent = statusStr;
     }
 
     if (compassStatusText && frame.epg) {
       const maxAct = Math.max(...frame.epg);
-      compassStatusText.textContent = `Ring bump peak: ${maxAct.toFixed(3)} | 16 E-PG glomeruli tracking heading.`;
+      compassStatusText.textContent = `Ring bump peak: ${maxAct.toFixed(3)} | 16 E-PG wedges tracking heading.`;
     }
 
     if (steeringStatusText && frame.steering) {
@@ -148,7 +143,8 @@
     }
 
     if (motorStatusText && frame.motor) {
-      motorStatusText.textContent = `DNa02_L: ${(frame.motor.dna02_l || 0).toFixed(3)} | DNa02_R: ${(frame.motor.dna02_r || 0).toFixed(3)} | DNp: ${(frame.motor.dnp || 0).toFixed(3)}`;
+      const forwardVal = (frame.motor.dna01 !== undefined ? frame.motor.dna01 : (frame.motor.dnp || 0));
+      motorStatusText.textContent = `DNa02_L: ${(frame.motor.dna02_l || 0).toFixed(3)} | DNa02_R: ${(frame.motor.dna02_r || 0).toFixed(3)} | DNa01: ${forwardVal.toFixed(3)}`;
     }
 
     // Dispatch to 2D Canvas Renderers (3D Brain rendered via requestAnimationFrame)
@@ -176,7 +172,11 @@
 
     eventSource.onopen = () => {
       console.log('Connected to FlyBrain Snake SSE telemetry stream.');
-      updateStatusBadge(isPaused ? 'PAUSED' : 'RUNNING');
+      if (latestFrame && latestFrame.done) {
+        updateStatusBadge('GAME OVER');
+      } else {
+        updateStatusBadge(isPaused ? 'PAUSED' : 'RUNNING');
+      }
     };
 
     eventSource.onmessage = (e) => {
@@ -206,7 +206,11 @@
         isPaused = !!data.paused;
         if (speedSlider) speedSlider.value = data.fps || 10;
         if (speedValue) speedValue.textContent = data.fps || 10;
-        updateStatusBadge(isPaused ? 'PAUSED' : 'RUNNING');
+        if (data.done) {
+          updateStatusBadge('GAME OVER');
+        } else {
+          updateStatusBadge(isPaused ? 'PAUSED' : 'RUNNING');
+        }
       }
     } catch (e) {
       console.warn('Status check deferred:', e);
@@ -245,11 +249,8 @@
   ];
 
   function setActivePresetBtn(activeBtn) {
-    presetMap.forEach(item => {
-      if (item.btn) {
-        if (item.btn === activeBtn) item.btn.classList.add('active');
-        else item.btn.classList.remove('active');
-      }
+    presetMap.forEach(({ btn }) => {
+      if (btn) btn.classList.toggle('active', btn === activeBtn);
     });
   }
 
@@ -267,10 +268,10 @@
         const isRotating = window.toggleBrain3DAutoRotate();
         if (isRotating) {
           brainRotateBtn.classList.add('active');
-          brainRotateBtn.textContent = '⟳ 自动旋转: 开';
+          brainRotateBtn.textContent = '⟳ Auto-Rotate: ON';
         } else {
           brainRotateBtn.classList.remove('active');
-          brainRotateBtn.textContent = '⟳ 自动旋转: 关';
+          brainRotateBtn.textContent = '⟳ Auto-Rotate: OFF';
         }
       }
     });
@@ -281,16 +282,43 @@
     window.setupBrain3DInteraction(brain3dCanvas);
   }
 
-  // Continuous 60fps Animation Loop for 3D Brain Orbit & Spikes
-  function animate3DBrain() {
+  // Continuous 60fps Animation Loop for 3D Brain Orbit & Animated Odor Plume Waves
+  const odorToggleBtn = document.getElementById('odorToggleBtn');
+  const arenaOdorBtn = document.getElementById('arenaOdorBtn');
+
+  window.showOdorField = false;
+
+  function toggleOdorDisplay() {
+    window.showOdorField = !window.showOdorField;
+    const isShow = window.showOdorField;
+    if (odorToggleBtn) {
+      odorToggleBtn.classList.toggle('active', isShow);
+      odorToggleBtn.textContent = isShow ? '♨ Odor Plume: ON' : '♨ Odor Plume: OFF';
+    }
+    if (arenaOdorBtn) {
+      arenaOdorBtn.classList.toggle('active', isShow);
+      arenaOdorBtn.textContent = isShow ? '♨ Odor: ON' : '♨ Odor: OFF';
+    }
+    if (latestFrame && window.renderSnake && snakeCanvas) {
+      window.renderSnake(snakeCanvas, latestFrame);
+    }
+  }
+
+  if (odorToggleBtn) odorToggleBtn.addEventListener('click', toggleOdorDisplay);
+  if (arenaOdorBtn) arenaOdorBtn.addEventListener('click', toggleOdorDisplay);
+
+  function animateViews() {
     if (window.renderBrain3D && brain3dCanvas) {
       window.renderBrain3D(brain3dCanvas, latestFrame);
     }
-    requestAnimationFrame(animate3DBrain);
+    if (window.renderSnake && snakeCanvas && latestFrame && window.showOdorField) {
+      window.renderSnake(snakeCanvas, latestFrame);
+    }
+    requestAnimationFrame(animateViews);
   }
-  requestAnimationFrame(animate3DBrain);
+  requestAnimationFrame(animateViews);
 
-  // Keyboard Shortcuts (Space: Play/Pause, S: Step, R: Reset)
+  // Keyboard Shortcuts (Space: Play/Pause, S: Step, R: Reset, O: Toggle Odor)
   window.addEventListener('keydown', (e) => {
     if (e.target.tagName === 'INPUT') return;
     if (e.code === 'Space') {
@@ -302,6 +330,9 @@
     } else if (e.code === 'KeyR') {
       e.preventDefault();
       sendCommand('reset');
+    } else if (e.code === 'KeyO') {
+      e.preventDefault();
+      toggleOdorDisplay();
     }
   });
 

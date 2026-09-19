@@ -22,7 +22,9 @@ function renderCompass(canvas, frame) {
   const anglePerWedge = (Math.PI * 2) / numWedges;
 
   const epg = frame.epg && frame.epg.length === 16 ? frame.epg : new Array(16).fill(0);
-  const maxAct = Math.max(0.001, ...epg);
+  const minAct = Math.min(...epg);
+  const maxAct = Math.max(...epg);
+  const actRange = maxAct - minAct;
 
   // 2. Draw 16 E-PG Wedges
   // Wedge 0 points North (angle -PI/2)
@@ -30,7 +32,7 @@ function renderCompass(canvas, frame) {
     const startAngle = i * anglePerWedge - Math.PI / 2 - anglePerWedge / 2;
     const endAngle = startAngle + anglePerWedge;
     const val = epg[i] || 0;
-    const normVal = Math.min(1.0, Math.max(0.0, val / Math.max(1.0, maxAct)));
+    const normVal = actRange > 0.01 ? Math.min(1.0, Math.max(0.0, (val - minAct) / actRange)) : 0.0;
 
     ctx.beginPath();
     ctx.arc(cx, cy, outerR, startAngle, endAngle, false);

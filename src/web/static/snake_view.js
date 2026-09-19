@@ -33,6 +33,41 @@ function renderSnake(canvas, frame) {
     ctx.stroke();
   }
 
+  // 2.5 Food Odor Plume Field (if enabled)
+  if (window.showOdorField && frame.food && frame.food.length >= 2) {
+    const fx = frame.food[0] * cellSize + cellSize / 2;
+    const fy = frame.food[1] * cellSize + cellSize / 2;
+    const maxRadius = cellSize * 8.5;
+
+    // A. Multi-stop radial chemical concentration field
+    const plumeGrad = ctx.createRadialGradient(fx, fy, cellSize * 0.3, fx, fy, maxRadius);
+    plumeGrad.addColorStop(0.0, 'rgba(245, 158, 11, 0.36)');     // Core warm amber
+    plumeGrad.addColorStop(0.25, 'rgba(217, 119, 6, 0.20)');
+    plumeGrad.addColorStop(0.55, 'rgba(52, 211, 153, 0.10)');    // Volatile mint/emerald diffusion
+    plumeGrad.addColorStop(0.85, 'rgba(56, 189, 248, 0.04)');    // Trace edge
+    plumeGrad.addColorStop(1.0, 'rgba(11, 15, 20, 0)');
+    ctx.fillStyle = plumeGrad;
+    ctx.beginPath();
+    ctx.arc(fx, fy, maxRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // B. Concentric pulsating odor diffusion wave rings
+    const now = Date.now() / 1000;
+    const ringCount = 3;
+    ctx.lineWidth = 1.2;
+    for (let r = 0; r < ringCount; r++) {
+      const phase = ((now * 0.35 + r / ringCount) % 1.0);
+      const ringRadius = cellSize * 0.6 + phase * cellSize * 7.5;
+      const alpha = Math.sin(phase * Math.PI) * 0.30;
+      ctx.strokeStyle = `rgba(245, 158, 11, ${alpha.toFixed(3)})`;
+      ctx.setLineDash([3, 5]);
+      ctx.beginPath();
+      ctx.arc(fx, fy, ringRadius, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
   // 3. Render Food
   if (frame.food && frame.food.length >= 2) {
     const fx = frame.food[0] * cellSize + cellSize / 2;
@@ -116,17 +151,123 @@ function renderSnake(canvas, frame) {
       eye2 = [cx - eyeOffset, cy + eyeOffset];
     }
 
+    const olf = frame.olfactory || {};
+    const visualGain = parseFloat(olf.visual_gain || 3.5);
+    const isVisionLocked = (visualGain >= 5.0 || (olf.gating_factor && olf.gating_factor > 1.25));
+
     ctx.fillStyle = '#0f172a';
     ctx.beginPath();
     ctx.arc(eye1[0], eye1[1], eyeRadius, 0, Math.PI * 2);
     ctx.arc(eye2[0], eye2[1], eyeRadius, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = '#ffffff';
+    // Specular / pupil highlight: radiant gold when vision is locked by odor gating!
+    ctx.save();
+    if (isVisionLocked) {
+      ctx.fillStyle = '#fbbf24';
+      ctx.shadowColor = '#f59e0b';
+      ctx.shadowBlur = 8;
+    } else {
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowBlur = 0;
+    }
     ctx.beginPath();
-    ctx.arc(eye1[0], eye1[1], eyeRadius * 0.4, 0, Math.PI * 2);
-    ctx.arc(eye2[0], eye2[1], eyeRadius * 0.4, 0, Math.PI * 2);
+    ctx.arc(eye1[0], eye1[1], eyeRadius * 0.45, 0, Math.PI * 2);
+    ctx.arc(eye2[0], eye2[1], eyeRadius * 0.45, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+
+    // 5.5 Fruit Fly Bilateral Antennal Sensors & Attraction Gradient (if enabled)
+    if (window.showOdorField) {
+      const dirs = [[0, -1], [1, 0], [0, 1], [-1, 0]]; // UP, RIGHT, DOWN, LEFT
+      const [dx, dy] = dirs[dir] || [1, 0];
+
+      // True forward-left (al) and forward-right (ar) antenna grid coordinates
+      const al_gx = frame.head[0] + dx + dy;
+      const al_gy = frame.head[1] + dy - dx;
+      const ar_gx = frame.head[0] + dx - dy;
+      const ar_gy = frame.head[1] + dy + dx;
+
+      const headPx = cx;
+      const headPy = cy;
+      const alPx = al_gx * cellSize + cellSize / 2;
+      const alPy = al_gy * cellSize + cellSize / 2;
+      const arPx = ar_gx * cellSize + cellSize / 2;
+      const arPy = ar_gy * cellSize + cellSize / 2;
+
+      const cL = olf.c_left !== undefined ? olf.c_left : 0;
+      const cR = olf.c_right !== undefined ? olf.c_right : 0;
+
+      // Attraction vector: dashed guidance line from head to food (high-voltage gold when locked)
+      if (frame.food && frame.food.length >= 2) {
+        const foodPx = frame.food[0] * cellSize + cellSize / 2;
+        const foodPy = frame.food[1] * cellSize + cellSize / 2;
+
+        ctx.save();
+        if (isVisionLocked) {
+          ctx.lineWidth = 2.0;
+          ctx.setLineDash([4, 2]);
+          ctx.strokeStyle = '#fbbf24';
+          ctx.shadowColor = '#f59e0b';
+          ctx.shadowBlur = 10;
+        } else {
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([2, 4]);
+          ctx.strokeStyle = 'rgba(245, 158, 11, 0.40)';
+          ctx.shadowBlur = 0;
+        }
+        ctx.beginPath();
+        ctx.moveTo(headPx, headPy);
+        ctx.lineTo(foodPx, foodPy);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // Left & Right Antenna Filaments
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = cL >= cR ? 'rgba(251, 191, 36, 0.85)' : 'rgba(148, 163, 184, 0.45)';
+      ctx.beginPath();
+      ctx.moveTo(headPx + (dx + dy) * 3.5, headPy + (dy - dx) * 3.5);
+      ctx.lineTo(alPx, alPy);
+      ctx.stroke();
+
+      ctx.strokeStyle = cR >= cL ? 'rgba(251, 191, 36, 0.85)' : 'rgba(148, 163, 184, 0.45)';
+      ctx.beginPath();
+      ctx.moveTo(headPx + (dx - dy) * 3.5, headPy + (dy + dx) * 3.5);
+      ctx.lineTo(arPx, arPy);
+      ctx.stroke();
+
+      // Antenna Sensory Receptor Bulbs
+      const baseBulb = cellSize * 0.16;
+      const lBulb = baseBulb * (0.8 + Math.min(1.2, cL / 5.5));
+      const rBulb = baseBulb * (0.8 + Math.min(1.2, cR / 5.5));
+
+      ctx.save();
+      // Left Bulb
+      ctx.fillStyle = cL >= cR ? '#fbbf24' : '#64748b';
+      ctx.shadowColor = cL >= cR ? '#f59e0b' : 'transparent';
+      ctx.shadowBlur = cL >= cR ? 8 : 0;
+      ctx.beginPath();
+      ctx.arc(alPx, alPy, lBulb, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Right Bulb
+      ctx.fillStyle = cR >= cL ? '#fbbf24' : '#64748b';
+      ctx.shadowColor = cR >= cL ? '#f59e0b' : 'transparent';
+      ctx.shadowBlur = cR >= cL ? 8 : 0;
+      ctx.beginPath();
+      ctx.arc(arPx, arPy, rBulb, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      // Micro-labels for sensory concentration
+      ctx.font = 'bold 9px monospace';
+      ctx.fillStyle = cL >= cR ? '#fef08a' : '#94a3b8';
+      ctx.fillText(`L:${cL.toFixed(1)}`, alPx - 10, alPy - (dy < 0 ? 5 : -14));
+
+      ctx.fillStyle = cR >= cL ? '#fef08a' : '#94a3b8';
+      ctx.fillText(`R:${cR.toFixed(1)}`, arPx - 10, arPy - (dy < 0 ? 5 : -14));
+    }
   }
 
   // 6. Terminal Game Over Overlay

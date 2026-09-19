@@ -1,0 +1,8 @@
+- Remove obsolete paths. Ship only current code.
+- Use simplest code that meets needs now.
+- Build in layers. Ship smallest working version first. Add on top of working product.
+- Keep modules separate with clear concerns.
+- Prefer mature libraries that simplify or stabilize.
+- Check existing deps, docs, and types first.
+- Design for the long term.
+- Study proven products. Adopt their patterns.
